@@ -291,9 +291,9 @@
             const [characterElementFilters, setCharacterElementFilters] = useState(new Set());
             const [characterFactionFilters, setCharacterFactionFilters] = useState(new Set());
             const [characterWeaponTypeFilters, setCharacterWeaponTypeFilters] = useState(new Set());
+            const [characterRarityFilters, setCharacterRarityFilters] = useState(new Set());
             const [weaponCategoryFilters, setWeaponCategoryFilters] = useState(new Set());
-
-            const [stageSort, setStageSort] = useState('name');
+            const [weaponRarityFilters, setWeaponRarityFilters] = useState(new Set());
 
             const [output, setOutput] = useState(null);
             const [showOutputModal, setShowOutputModal] = useState(false);
@@ -338,7 +338,11 @@
                     })
                     .then((json) => {
                         const stagesFlat = flattenStages(json.stages);
-                        const withStageFlat = { ...json, stagesFlat };
+
+                        const characterRarities = [...new Set(json.characters.map(c => c.rarity))].sort((a, b) => a - b);
+                        const weaponRarities = [...new Set(json.weapons.map(w => w.rarity))].sort((a, b) => a - b);
+
+                        const withStageFlat = { ...json, stagesFlat, weaponRarities, characterRarities };
                         setData(withStageFlat);
 
                         const savedSettings = localStorage.getItem(SETTINGS_KEY);
@@ -362,7 +366,9 @@
                         setCharacterElementFilters(new Set([]));
                         setCharacterFactionFilters(new Set([]));
                         setCharacterWeaponTypeFilters(new Set([]));
+                        setCharacterRarityFilters(new Set([]));
                         setWeaponCategoryFilters(new Set([]));
+                        setWeaponRarityFilters(new Set([]));
 
                         const initialWeaponCounts = {};
                         json.weapons.forEach((weapon) => {
@@ -487,18 +493,20 @@
                     const byElement = characterElementFilters.size === 0 || characterElementFilters.has(character.element);
                     const byFaction = characterFactionFilters.size === 0 || characterFactionFilters.has(character.faction);
                     const byWeaponType = characterWeaponTypeFilters.size === 0 || characterWeaponTypeFilters.has(character.type);
-                    return byName && byClass && byElement && byFaction && byWeaponType;
+                    const byRarity = characterRarityFilters.size === 0 || characterRarityFilters.has(character.rarity);
+                    return byName && byClass && byElement && byFaction && byWeaponType && byRarity;
                 });
-            }, [data, characterSearch, characterClassFilters, characterElementFilters, characterFactionFilters, characterWeaponTypeFilters]);
+            }, [data, characterSearch, characterClassFilters, characterElementFilters, characterFactionFilters, characterWeaponTypeFilters, characterRarityFilters]);
 
             const filteredWeapons = useMemo(() => {
                 if (!data) return [];
                 return data.weapons.filter((weapon) => {
                     const byName = weapon.name.toLowerCase().includes(weaponSearch.toLowerCase());
                     const byCategory = weaponCategoryFilters.size === 0 || weaponCategoryFilters.has(weapon.type);
-                    return byName && byCategory;
+                    const byRarity = weaponRarityFilters.size === 0 || weaponRarityFilters.has(weapon.rarity);
+                    return byName && byCategory && byRarity;
                 }).sort(sortByRarityThenName);
-            }, [data, weaponSearch, weaponCategoryFilters]);
+            }, [data, weaponSearch, weaponCategoryFilters, weaponRarityFilters]);
 
             const sortedFilteredCharacters = useMemo(
                 () => [...filteredCharacters].sort(sortByRarityThenName),
@@ -712,6 +720,14 @@
                                         onSelectAll={() => setCharacterWeaponTypeFilters(new Set(data.weaponcategory || []))}
                                         onClear={() => setCharacterWeaponTypeFilters(new Set())}
                                     />
+                                    <ChipFilterGroup
+                                        title="Rarity"
+                                        options={data.characterRarities || []}
+                                        selectedSet={characterRarityFilters}
+                                        onToggle={(value) => setCharacterRarityFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setCharacterRarityFilters(new Set(data.characterRarities || []))}
+                                        onClear={() => setCharacterRarityFilters(new Set())}
+                                    />
                                 </AccordionSection>
 
                                 <div className="control-row mt-2">
@@ -778,6 +794,14 @@
                                         onToggle={(value) => setWeaponCategoryFilters((prev) => toggleInSet(prev, value))}
                                         onSelectAll={() => setWeaponCategoryFilters(new Set(data.weaponcategory || []))}
                                         onClear={() => setWeaponCategoryFilters(new Set())}
+                                    />
+                                    <ChipFilterGroup
+                                        title="Rarity"
+                                        options={data.weaponRarities || []}
+                                        selectedSet={weaponRarityFilters}
+                                        onToggle={(value) => setWeaponRarityFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setWeaponRarityFilters(new Set(data.weaponRarities || []))}
+                                        onClear={() => setWeaponRarityFilters(new Set())}
                                     />
                                 </AccordionSection>
 
