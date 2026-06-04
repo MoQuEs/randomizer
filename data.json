@@ -1,0 +1,322 @@
+{
+  "characters": [
+    {
+      "name": "Antal",
+      "class": "Supporter",
+      "type": "Arts Unit",
+      "rarity": 4,
+      "element": "Electric",
+      "faction": "Endfield Industries",
+      "main": "Intellect",
+      "sub": "Strength"
+    },
+    {
+      "name": "Chen Qianyu",
+      "class": "Guard",
+      "type": "Sword",
+      "rarity": 5,
+      "element": "Physical",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Strength"
+    },
+    {
+      "name": "Arclight",
+      "class": "Vanguard",
+      "type": "Sword",
+      "rarity": 5,
+      "element": "Electric",
+      "faction": "Hannabit Circuit",
+      "main": "Agility",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Zhuang Fangyi",
+      "class": "Striker",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "element": "Electric",
+      "faction": "HAS",
+      "main": "Will",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Ember",
+      "class": "Caster",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "element": "Heat",
+      "faction": "Endfield Industries",
+      "main": "Will",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Gilberta",
+      "class": "Defender",
+      "type": "Greatsword",
+      "rarity": 5,
+      "element": "Physical",
+      "faction": "TGCC",
+      "main": "Strength",
+      "sub": "Will"
+    },
+    {
+      "name": "Laevatain",
+      "class": "Striker",
+      "type": "Sword",
+      "rarity": 6,
+      "element": "Heat",
+      "faction": "HAS",
+      "main": "Agility",
+      "sub": "Strength"
+    },
+    {
+      "name": "Rossi",
+      "class": "Vanguard",
+      "type": "Handcannon",
+      "rarity": 3,
+      "element": "Physical",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Strength"
+    },
+    {
+      "name": "Snowshine",
+      "class": "Guard",
+      "type": "Sword",
+      "rarity": 4,
+      "element": "Cryo",
+      "faction": "Rhodes Island",
+      "main": "Agility",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Yvonne",
+      "class": "Supporter",
+      "type": "Arts Unit",
+      "rarity": 4,
+      "element": "Nature",
+      "faction": "Rhodes Island",
+      "main": "Will",
+      "sub": "Intellect"
+    }
+  ],
+  "weapons": [
+    {
+      "name": "Delivery Guaranteed",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Exemplar",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Ancient Canal",
+      "type": "Greatsword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Arts Intensity Boost",
+      "skill_stat": "Brutality"
+    },
+    {
+      "name": "OBJ Velocitous",
+      "type": "Handcannon",
+      "rarity": 5,
+      "attr_stat": "Agility",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Detonate"
+    },
+    {
+      "name": "Jiminy 12",
+      "type": "Arts Unit",
+      "rarity": 3,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "None",
+      "skill_stat": "Assault"
+    },
+    {
+      "name": "Valiant",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Brutality"
+    },
+    {
+      "name": "Khravengger",
+      "type": "Greatsword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Brutality"
+    },
+    {
+      "name": "Flickers in the Mist",
+      "type": "Sword",
+      "rarity": 4,
+      "attr_stat": "Agility",
+      "sec_stat": "Cryo DMG Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Glorious Memory",
+      "type": "Handcannon",
+      "rarity": 4,
+      "attr_stat": "Intellect",
+      "sec_stat": "Arts Intensity Boost",
+      "skill_stat": "Support"
+    },
+    {
+      "name": "Howling Guard",
+      "type": "Polearm",
+      "rarity": 5,
+      "attr_stat": "Will",
+      "sec_stat": "Defense Boost",
+      "skill_stat": "Subjugation"
+    },
+    {
+      "name": "Navigator",
+      "type": "Sword",
+      "rarity": 4,
+      "attr_stat": "Will",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Navigation"
+    },
+    {
+      "name": "Oblivion",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "attr_stat": "Will",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Detonate"
+    },
+    {
+      "name": "Rapid Ascent",
+      "type": "Handcannon",
+      "rarity": 4,
+      "attr_stat": "Agility",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Sundered Prince",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Brutality"
+    },
+    {
+      "name": "Sundering Steel",
+      "type": "Polearm",
+      "rarity": 6,
+      "attr_stat": "Strength",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Brutality"
+    }
+  ],
+  "attribute": [
+    "Agility",
+    "Intellect",
+    "Main Attribute",
+    "Strength",
+    "Will"
+  ],
+  "classes": [
+    "Guard",
+    "Defender",
+    "Supporter",
+    "Caster",
+    "Striker",
+    "Vanguard"
+  ],
+  "elements": [
+    "Physical",
+    "Heat",
+    "Cryo",
+    "Nature",
+    "Electric"
+  ],
+  "fractions": [
+    "Endfield Industries",
+    "Rhodes Island",
+    "HAS",
+    "TGCC",
+    "UDST",
+    "Cabal of Tranquility",
+    "Hannabit Circuit",
+    "Order of Steel Oath",
+    "Seš'qa"
+  ],
+  "weaponcategory": [
+    "Greatsword",
+    "Handcannon",
+    "Arts Unit",
+    "Sword",
+    "Polearm"
+  ],
+  "ccs": [
+    {
+      "name": "CC: Infrastructure Collapse",
+      "tags": ["Hazard", "Defense", "Resource Drain"]
+    },
+    {
+      "name": "CC: Weapon Lockdown",
+      "tags": ["Weapon Restriction", "High Pressure", "Elite Waves"]
+    },
+    {
+      "name": "CC: Thermal Storm",
+      "tags": ["Element Shift", "Heat", "Boss Rush"]
+    },
+    {
+      "name": "CC: Frigid Pursuit",
+      "tags": ["Cryo", "Mobility", "Sustain Check"]
+    }
+  ],
+  "stages": {
+    "Protocol Space": {
+      "Operator EXP": {
+        "Derivative Memories": {
+          "lv": 10
+        },
+        "Derivative Trials": {
+          "lv": 35
+        },
+        "Derivative Suffering": {
+          "lv": 55
+        },
+        "Derivative Destruction": {
+          "lv": 70
+        },
+        "Manifested Nightmares": {
+          "lv": 80
+        }
+      },
+      "Promotions": {
+        "Tacit Brook": {
+          "lv": 10
+        },
+        "Tacit Canal": {
+          "lv": 35
+        },
+        "Tacit Mere": {
+          "lv": 55
+        },
+        "Tacit Undercurrent": {
+          "lv": 70
+        },
+        "Tacit Maelstrom": {
+          "lv": 80
+        }
+      }
+    }
+  }
+}
