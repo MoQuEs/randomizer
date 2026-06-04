@@ -132,8 +132,14 @@ body {
 	color: #c8c8c8;
 	border-radius: 6px;
 	font-size: 0.78rem;
-	letter-spacing: 0.4px;
+	letter-spacing: 1px;
 	padding: 5px 10px;
+	text-decoration: none;
+}
+
+.btn-yellow {
+	border: 1px solid #51421f;
+	color: #9a8042;
 }
 
 .action-btn {
