@@ -301,22 +301,11 @@
 
                 Object.keys(grouped).forEach((zoneKey) => {
                     Object.keys(grouped[zoneKey]).forEach((catKey) => {
-                        grouped[zoneKey][catKey].sort((a, b) => {
-                            if (a.lv !== b.lv) return a.lv - b.lv;
-                            return a.name.localeCompare(b.name);
-                        });
+                        grouped[zoneKey][catKey].sort((a, b) => a.lv - b.lv);
                     });
                 });
 
-                const sortedGrouped = {};
-                Object.keys(grouped).sort().forEach(zoneKey => {
-                    sortedGrouped[zoneKey] = {};
-                    Object.keys(grouped[zoneKey]).sort().forEach(catKey => {
-                        sortedGrouped[zoneKey][catKey] = grouped[zoneKey][catKey];
-                    });
-                });
-
-                return sortedGrouped;
+                return grouped;
             }, [filteredStages]);
 
 
@@ -706,6 +695,45 @@
                                             })}
                                         >
                                             Clear visible
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mini-btn"
+                                            onClick={() => {
+                                                setSelectedStages(prev => {
+                                                    const next = new Set(prev);
+                                                    Object.values(groupedStages).forEach(categories => {
+                                                        Object.values(categories).forEach(items => {
+                                                            const toKeep = items.at(-1);
+                                                            items.forEach(item => {
+                                                                if (item.id !== toKeep.id) {
+                                                                    next.delete(item.id);
+                                                                }
+                                                            });
+                                                        });
+                                                    });
+                                                    return next;
+                                                });
+                                            }}
+                                        >
+                                            Unselect lesser stages
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mini-btn"
+                                            onClick={() => {
+                                                setSelectedStages(prev => {
+                                                    const next = new Set(prev);
+                                                    filteredStages.forEach(item => {
+                                                        if (!item.zone.includes('RE-Crisis')) {
+                                                            next.delete(item.id);
+                                                        }
+                                                    });
+                                                    return next;
+                                                });
+                                            }}
+                                        >
+                                            Unselect non RE-Crisis
                                         </button>
                                         <span className="count-text">Selected: {selectedStages.size}</span>
                                     </div>

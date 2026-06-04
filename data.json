@@ -879,41 +879,79 @@
     "Sword",
     "Polearm"
   ],
-  "ccs": [
-    {
-      "name": "CC: Infrastructure Collapse",
-      "tags": [
-        "Hazard",
-        "Defense",
-        "Resource Drain"
-      ]
-    },
-    {
-      "name": "CC: Weapon Lockdown",
-      "tags": [
-        "Weapon Restriction",
-        "High Pressure",
-        "Elite Waves"
-      ]
-    },
-    {
-      "name": "CC: Thermal Storm",
-      "tags": [
-        "Element Shift",
-        "Heat",
-        "Boss Rush"
-      ]
-    },
-    {
-      "name": "CC: Frigid Pursuit",
-      "tags": [
-        "Cryo",
-        "Mobility",
-        "Sustain Check"
-      ]
-    }
-  ],
   "stages": {
+    "RE-Crisis": {
+      "Rhodagn": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Triaggelos": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Marble Aggelomoirai": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Ruan Yi": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Nefarith": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      }
+    },
     "Protocol Space": {
       "Operator EXP": {
         "Derivative Memories": {
@@ -1042,78 +1080,6 @@
       "Hazardous Material Containment Vault": {
         "Containment Vault": {
           "lv": 70
-        }
-      }
-    },
-    "RE-Crisis": {
-      "Rhodagn": {
-        "Crisis Reflection": {
-          "lv": 40
-        },
-        "Crisis Extension": {
-          "lv": 60
-        },
-        "Crisis Calamity": {
-          "lv": 80
-        },
-        "Crisis Pandemonium": {
-          "lv": 90
-        }
-      },
-      "Triaggelos": {
-        "Crisis Reflection": {
-          "lv": 40
-        },
-        "Crisis Extension": {
-          "lv": 60
-        },
-        "Crisis Calamity": {
-          "lv": 80
-        },
-        "Crisis Pandemonium": {
-          "lv": 90
-        }
-      },
-      "Marble Aggelomoirai": {
-        "Crisis Reflection": {
-          "lv": 40
-        },
-        "Crisis Extension": {
-          "lv": 60
-        },
-        "Crisis Calamity": {
-          "lv": 80
-        },
-        "Crisis Pandemonium": {
-          "lv": 90
-        }
-      },
-      "Ruan Yi": {
-        "Crisis Reflection": {
-          "lv": 40
-        },
-        "Crisis Extension": {
-          "lv": 60
-        },
-        "Crisis Calamity": {
-          "lv": 80
-        },
-        "Crisis Pandemonium": {
-          "lv": 90
-        }
-      },
-      "Nefarith": {
-        "Crisis Reflection": {
-          "lv": 40
-        },
-        "Crisis Extension": {
-          "lv": 60
-        },
-        "Crisis Calamity": {
-          "lv": 80
-        },
-        "Crisis Pandemonium": {
-          "lv": 90
         }
       }
     }
