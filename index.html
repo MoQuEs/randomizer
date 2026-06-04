@@ -193,6 +193,11 @@
             const [error, setError] = useState('');
             const [stageOrCcMode, setStageOrCcMode] = useState('stage');
 
+            const [showImportExportModal, setShowImportExportModal] = useState(false);
+            const [importExportMode, setImportExportMode] = useState('export');
+            const [importExportText, setImportExportText] = useState('');
+            const [importExportError, setImportExportError] = useState('');
+
             const [selectedCharacters, setSelectedCharacters] = useState(new Set());
             const [selectedWeapons, setSelectedWeapons] = useState(new Set());
             const [selectedStages, setSelectedStages] = useState(new Set());
@@ -215,6 +220,38 @@
 
             const [output, setOutput] = useState(null);
 
+            const SETTINGS_KEY = 'endfield_randomizer_settings_v1';
+
+            useEffect(() => {
+                const savedSettings = localStorage.getItem(SETTINGS_KEY);
+                if (savedSettings) {
+                    try {
+                        const parsed = JSON.parse(savedSettings);
+                        if (parsed) {
+                            if (parsed.selectedCharacters) setSelectedCharacters(new Set(parsed.selectedCharacters));
+                            if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
+                            if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
+                            if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
+                            if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
+                        }
+                    } catch (e) {
+                        console.error("Failed to parse randomizer settings from localStorage", e);
+                    }
+                }
+            }, []);
+
+            useEffect(() => {
+                if (!data) return; // Don't save until data is loaded
+                const settings = {
+                    selectedCharacters: [...selectedCharacters],
+                    selectedWeapons: [...selectedWeapons],
+                    weaponCounts,
+                    selectedStages: [...selectedStages],
+                    selectedCcs: [...selectedCcs],
+                };
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+            }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcs, data]);
+
             useEffect(() => {
                 fetch('data.json')
                     .then((res) => {
@@ -226,10 +263,22 @@
                         const withStageFlat = { ...json, stagesFlat };
                         setData(withStageFlat);
 
-                        setSelectedCharacters(new Set(json.characters.map((c) => c.name)));
-                        setSelectedWeapons(new Set(json.weapons.map((w) => w.name)));
-                        setSelectedStages(new Set(stagesFlat.map((s) => s.id)));
-                        setSelectedCcs(new Set((json.ccs || []).map((cc) => cc.name)));
+                        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+                        if (savedSettings) {
+                            // Settings are loaded in another useEffect
+                        } else {
+                            // Only set defaults if no saved settings
+                            setSelectedCharacters(new Set(json.characters.map((c) => c.name)));
+                            setSelectedWeapons(new Set(json.weapons.map((w) => w.name)));
+                            setSelectedStages(new Set(stagesFlat.map((s) => s.id)));
+                            setSelectedCcs(new Set((json.ccs || []).map((cc) => cc.name)));
+
+                            const initialWeaponCounts = {};
+                            json.weapons.forEach((weapon) => {
+                                initialWeaponCounts[weapon.name] = 1;
+                            });
+                            setWeaponCounts(prev => ({...initialWeaponCounts, ...prev}));
+                        }
 
                         setCharacterClassFilters(new Set([]));
                         setCharacterElementFilters(new Set([]));
@@ -241,10 +290,104 @@
                         json.weapons.forEach((weapon) => {
                             initialWeaponCounts[weapon.name] = 1;
                         });
-                        setWeaponCounts(initialWeaponCounts);
+                        setWeaponCounts(prev => ({...initialWeaponCounts, ...prev}));
                     })
                     .catch((err) => setError(err.message || 'Failed to load data'));
             }, []);
+
+            // Back button handling
+            useEffect(() => {
+                const handlePopState = (e) => {
+                    if (showImportExportModal) {
+                        setShowImportExportModal(false);
+                        setImportExportError('');
+                    }
+                };
+                window.addEventListener('popstate', handlePopState);
+                return () => window.removeEventListener('popstate', handlePopState);
+            }, [showImportExportModal]);
+
+            useEffect(() => {
+                if (showImportExportModal) {
+                    if (!window.history.state?.modal) {
+                        window.history.pushState({ modal: true }, '');
+                    }
+                }
+            }, [showImportExportModal]);
+
+            const closeModals = () => {
+                if (showImportExportModal) {
+                    setShowImportExportModal(false);
+                    setImportExportError('');
+                    if (window.history.state?.modal) {
+                        window.history.back();
+                    }
+                }
+            };
+
+            const openImportExportModal = (mode) => {
+                setImportExportMode(mode);
+                setImportExportError('');
+                if (mode === 'export') {
+                    const settings = {
+                        selectedCharacters: [...selectedCharacters],
+                        selectedWeapons: [...selectedWeapons],
+                        weaponCounts,
+                        selectedStages: [...selectedStages],
+                        selectedCcs: [...selectedCcs],
+                    };
+                    setImportExportText(JSON.stringify(settings, null, 2));
+                } else {
+                    setImportExportText('');
+                }
+                setShowImportExportModal(true);
+            };
+
+            const handleExportSettings = () => {
+                setImportExportMode('export');
+                setImportExportError('');
+                const settings = {
+                    selectedCharacters: [...selectedCharacters],
+                    selectedWeapons: [...selectedWeapons],
+                    weaponCounts,
+                    selectedStages: [...selectedStages],
+                    selectedCcs: [...selectedCcs],
+                };
+                setImportExportText(JSON.stringify(settings, null, 2));
+            };
+
+            const handleImportSettings = () => {
+                if (!data) return;
+
+                let parsed;
+                try {
+                    parsed = JSON.parse(importExportText);
+                } catch (err) {
+                    setImportExportError('Invalid JSON. Please paste a valid JSON object.');
+                    return;
+                }
+
+                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                    setImportExportError('JSON must be an object.');
+                    return;
+                }
+
+                // Basic validation for expected keys
+                const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs'];
+                const hasSomeExpectedKey = expectedKeys.some(key => key in parsed);
+                if (!hasSomeExpectedKey) {
+                    setImportExportError('Imported JSON does not contain any valid settings keys.');
+                    return;
+                }
+
+                if (parsed.selectedCharacters) setSelectedCharacters(new Set(parsed.selectedCharacters));
+                if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
+                if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
+                if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
+                if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
+
+                closeModals();
+            };
 
             useEffect(() => {
                 if (!data) return;
@@ -381,10 +524,47 @@
 
             return (
                 <div className="container-fluid py-4 app-shell">
+                    {showImportExportModal && (
+                        <div className="custom-modal-overlay" onClick={closeModals}>
+                            <div className="custom-modal" style={{maxWidth: '700px'}} onClick={e => e.stopPropagation()}>
+                                <h4 className="mb-3">Settings Import / Export</h4>
+                                <div className="d-flex gap-2 mb-3">
+                                    <button className="reset-btn" onClick={handleExportSettings}>EXPORT JSON</button>
+                                    <button className="reset-btn" onClick={() => { setImportExportMode('import'); setImportExportError(''); }}>IMPORT JSON</button>
+                                </div>
+                                <label htmlFor="importExportTextarea" style={{ color: '#aaa', fontSize: '0.85rem' }}>
+                                    {importExportMode === 'export'
+                                        ? 'Copy this JSON to export your saved settings.'
+                                        : 'Paste JSON object to import your settings.'}
+                                </label>
+                                <textarea
+                                    id="importExportTextarea"
+                                    className="form-control form-control-sm bg-dark text-light border-secondary"
+                                    rows="14"
+                                    value={importExportText}
+                                    readOnly={importExportMode === 'export'}
+                                    onChange={e => setImportExportText(e.target.value)}
+                                    placeholder='Paste your settings here...'
+                                    style={{fontFamily: 'Consolas, Monaco, monospace'}}
+                                />
+                                {importExportError && (
+                                    <div className="mt-2" style={{color: '#ff8a8a', fontSize: '0.85rem'}}>{importExportError}</div>
+                                )}
+                                <div className="modal-buttons">
+                                    {importExportMode === 'import' && (
+                                        <button className="modal-btn btn-confirm" onClick={handleImportSettings}>IMPORT</button>
+                                    )}
+                                    <button className="modal-btn btn-cancel" onClick={closeModals}>CLOSE</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <header className="mb-3">
                         <div className="d-flex justify-content-between align-items-center mb-2">
                             <h3 className="m-0 fw-bold">Randomizer</h3>
                             <div className="d-flex gap-2">
+                                <button type="button" className="mini-btn" onClick={() => openImportExportModal('export')}>Export</button>
+                                <button type="button" className="mini-btn" onClick={() => openImportExportModal('import')}>Import</button>
                                 <button type="button" className="mini-btn" onClick={runRandomizer}>RANDOMIZE</button>
                             </div>
                         </div>
