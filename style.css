@@ -5,7 +5,7 @@ body {
 }
 
 .app-shell {
-	max-width: 1500px;
+	max-width: none;
 }
 
 .result-card {
@@ -103,7 +103,6 @@ body {
 }
 
 .filter-input,
-.filter-select,
 .count-input {
 	background: #0f0f0f;
 	color: #e8e8e8;
@@ -156,39 +155,12 @@ body {
 	font-size: 0.78rem;
 }
 
-.list-wrap {
-	max-height: 360px;
-	overflow-y: auto;
-	border-top: 1px solid #242424;
-	margin-top: 10px;
-}
-
-.list-item {
-	display: flex;
-	flex-direction: column;
-	gap: 3px;
-	padding: 8px 2px;
-	border-bottom: 1px solid #222;
-}
-
-.weapon-item {
-	gap: 8px;
-}
-
-.item-main {
-	font-size: 0.9rem;
-	color: #f2f2f2;
-}
-
-.item-meta {
-	font-size: 0.74rem;
-	color: #8a8a8a;
-}
-
 .count-input-wrap {
 	display: flex;
 	align-items: center;
 	gap: 6px;
+	justify-content: center;
+	margin-top: 7px;
 }
 
 .count-label {
@@ -222,6 +194,166 @@ body {
 	border-color: rgba(225, 186, 3, 0.8);
 	color: rgb(225, 186, 3);
 	background: rgba(225, 186, 3, 0.08);
+}
+
+.chip-group-title {
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.7px;
+	color: #aaa;
+	margin-bottom: 6px;
+}
+
+.chip-tools {
+	display: flex;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.chips-row {
+	display: flex;
+	gap: 7px;
+	flex-wrap: wrap;
+	margin-bottom: 10px;
+}
+
+.filter-group-card {
+	border: 1px solid #2a2a2a;
+	border-radius: 6px;
+	margin-bottom: 8px;
+	overflow: hidden;
+	background: #131313;
+}
+
+.filter-group-header {
+	width: 100%;
+	background: #171717;
+	border: none;
+	border-bottom: 1px solid #262626;
+	padding: 8px 10px;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.filter-group-body {
+	padding: 8px;
+}
+
+.filter-chip {
+	font-size: 0.76rem;
+	background: #222;
+	color: #bbb;
+	border: 1px solid #444;
+	border-radius: 999px;
+	padding: 4px 10px;
+}
+
+.filter-chip-active {
+	border-color: rgb(225, 186, 3);
+	color: rgb(225, 186, 3);
+	background: rgba(225, 186, 3, 0.14);
+}
+
+.tile-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+	gap: 9px;
+}
+
+.output-tile-grid {
+	grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+}
+
+.square-tile {
+	background: #171717;
+	border: 1px solid #2a2a2a;
+	border-radius: 8px;
+	padding: 6px;
+	text-align: left;
+	color: inherit;
+	transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
+	position: relative;
+}
+
+.square-tile:hover {
+	border-color: #444;
+	transform: translateY(-1px);
+}
+
+.square-tile-selected {
+	box-shadow: 0 2px 0 1px #eef6ff;
+}
+
+.square-image-wrap {
+	width: 100%;
+	aspect-ratio: 1 / 1;
+	border-radius: 6px;
+	border: 1px solid #303030;
+	background: #111;
+	overflow: hidden;
+	position: relative;
+	margin: 0;
+}
+
+.square-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.tile-badge {
+	position: absolute;
+	top: 6px;
+	left: 6px;
+	background: rgba(0, 0, 0, 0.75);
+	border: 1px solid rgba(225, 186, 3, 0.8);
+	color: rgb(225, 186, 3);
+	border-radius: 999px;
+	padding: 2px 8px;
+	font-size: 0.7rem;
+}
+
+.square-title {
+	font-size: 0.86rem;
+	color: #f2f2f2;
+}
+
+.square-subtitle {
+	font-size: 0.72rem;
+	color: #8a8a8a;
+	margin-top: 4px;
+}
+
+.tile-accent {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 3px;
+	border-radius: 8px 8px 0 0;
+}
+
+.accent-6 { background: rgb(255, 112, 0); }
+.accent-5 { background: rgb(225, 186, 3); }
+.accent-4 { background: rgb(148, 81, 248); }
+.accent-3 { background: rgb(38, 186, 251); }
+
+.img-bg-6 { background: linear-gradient(135deg, rgba(255,112,0,0.2) 0%, rgba(255,112,0,0.05) 100%); border: 1px solid rgba(255,112,0,0.3); }
+.img-bg-5 { background: linear-gradient(135deg, rgba(225,186,3,0.2) 0%, rgba(225,186,3,0.05) 100%); border: 1px solid rgba(225,186,3,0.3); }
+.img-bg-4 { background: linear-gradient(135deg, rgba(148,81,248,0.2) 0%, rgba(148,81,248,0.05) 100%); border: 1px solid rgba(148,81,248,0.3); }
+.img-bg-3 { background: linear-gradient(135deg, rgba(38,186,251,0.2) 0%, rgba(38,186,251,0.05) 100%); border: 1px solid rgba(38,186,251,0.3); }
+
+.stage-group-block {
+	margin-bottom: 12px;
+}
+
+.stage-group-header {
+	font-size: 0.8rem;
+	letter-spacing: 0.6px;
+	color: #a8a8a8;
+	margin-bottom: 8px;
+	text-transform: uppercase;
 }
 
 .empty-state {

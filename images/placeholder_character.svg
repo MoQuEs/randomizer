@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" fill="#141414"/>
+  <rect x="16" y="16" width="224" height="224" rx="16" fill="#1f1f1f" stroke="#353535"/>
+  <circle cx="128" cy="98" r="34" fill="#4b4b4b"/>
+  <path d="M64 190c8-33 32-52 64-52s56 19 64 52" fill="#4b4b4b"/>
+  <text x="128" y="232" text-anchor="middle" fill="#7f7f7f" font-family="Segoe UI, Arial, sans-serif" font-size="16">CHARACTER</text>
+</svg>
+

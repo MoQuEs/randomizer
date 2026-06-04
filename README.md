@@ -16,6 +16,13 @@ Randomizer UI for:
 ## Notes
 
 - Stage and CC cannot both be used in one roll.
+- Character and weapon search bars are shown above filters.
+- Character/weapon filter sections (and each filter group) are collapsible and collapsed by default.
+- Character and weapon filters are multi-select chips (class, element, faction, weapon type, category).
+- Characters, weapons, and stages are shown as compact image-only selectable cards with name tooltips.
+- Character and weapon image cards use rarity-colored `img-bg-X` backgrounds.
+- Selected cards use a bright "priority-2" style outline.
+- Stage/CC radio mode hides the inactive section and clears its selection.
 - CC tag randomization is not implemented yet.
-- Images are intentionally not used in this version.
+- Placeholder images were added for missing character/weapon/stage images.
 

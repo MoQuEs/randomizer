@@ -22,6 +22,14 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo } = React;
 
+        const normalizeName = (name) =>
+            name
+                .toLowerCase()
+                .replace(/\s+/g, '_')
+                .replace(/:/g, '')
+                .replace(/'/g, '')
+                .replace(/,/g, '');
+
         const getRandomItem = (list) => list[Math.floor(Math.random() * list.length)];
 
         const shuffle = (list) => {
@@ -53,7 +61,6 @@
             return result;
         };
 
-        // Backtracking assignment to respect weapon count limits and type compatibility.
         const assignWeaponsToCharacters = (characters, weapons, weaponCountMap) => {
             const usedCounts = { ...weaponCountMap };
             const byType = {};
@@ -72,11 +79,10 @@
             const order = [...characters].sort(
                 (a, b) => optionsByCharacter[a.name].length - optionsByCharacter[b.name].length
             );
-            const assignment = {};
 
+            const assignment = {};
             const walk = (idx) => {
                 if (idx >= order.length) return true;
-
                 const character = order[idx];
                 const options = shuffle(optionsByCharacter[character.name]).filter(
                     (weapon) => (usedCounts[weapon.name] || 0) > 0
@@ -89,18 +95,24 @@
                     usedCounts[weapon.name] += 1;
                     delete assignment[character.name];
                 }
-
                 return false;
             };
 
             return walk(0) ? assignment : null;
         };
 
+        const toggleInSet = (set, key) => {
+            const next = new Set(set);
+            if (next.has(key)) next.delete(key);
+            else next.add(key);
+            return next;
+        };
+
         const AccordionSection = ({ title, defaultOpen = true, children }) => {
             const [open, setOpen] = useState(defaultOpen);
             return (
                 <div className="panel-card">
-                    <button className="panel-header" onClick={() => setOpen((prev) => !prev)}>
+                    <button type="button" className="panel-header" onClick={() => setOpen((prev) => !prev)}>
                         <span>{title}</span>
                         <span className="panel-caret">{open ? '-' : '+'}</span>
                     </button>
@@ -109,23 +121,95 @@
             );
         };
 
+        const ChipFilterGroup = ({ title, options, selectedSet, onToggle, onSelectAll, onClear }) => {
+            const [open, setOpen] = useState(false);
+            return (
+                <div className="filter-group-card">
+                    <button type="button" className="filter-group-header" onClick={() => setOpen((prev) => !prev)}>
+                        <span className="chip-group-title m-0">{title}</span>
+                        <span className="panel-caret">{open ? '-' : '+'}</span>
+                    </button>
+                    {open && (
+                        <div className="filter-group-body">
+                            <div className="chip-tools">
+                                <button type="button" className="mini-btn" aria-label={`${title} select all`} onClick={onSelectAll}>All</button>
+                                <button type="button" className="mini-btn" aria-label={`${title} clear all`} onClick={onClear}>None</button>
+                            </div>
+                            <div className="chips-row">
+                                {options.map((item) => (
+                                    <button
+                                        type="button"
+                                        key={`${title}-${item}`}
+                                        className={`filter-chip ${selectedSet.has(item) ? 'filter-chip-active' : ''}`}
+                                        aria-label={`${title} filter ${item}`}
+                                        onClick={() => onToggle(item)}
+                                    >
+                                        {item}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const sortByRarityThenName = (a, b) => {
+            const rarityA = typeof a.rarity === 'number' ? a.rarity : -1;
+            const rarityB = typeof b.rarity === 'number' ? b.rarity : -1;
+            if (rarityA !== rarityB) return rarityB - rarityA;
+            return a.name.localeCompare(b.name);
+        };
+
+        const SquareTile = ({ selected, onClick, image, placeholderImage, title, subtitle, tooltip, badge, rarity, useImageRarityBg = false, showText = false, children }) => (
+            <button
+                type="button"
+                className={`square-tile ${selected ? 'square-tile-selected' : ''}`}
+                onClick={onClick}
+                title={tooltip || title}
+                aria-label={tooltip || title}
+            >
+                <div className={`tile-accent accent-${rarity}`}></div>
+                <div className={`square-image-wrap ${useImageRarityBg && typeof rarity === 'number' ? `img-bg-${rarity}` : ''}`}>
+                    {badge && <div className="tile-badge">{badge}</div>}
+                    <img
+                        src={image}
+                        className="square-image"
+                        alt={title}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = placeholderImage;
+                        }}
+                    />
+                </div>
+                {showText && <div className="square-title">{title}</div>}
+                {showText && subtitle && <div className="square-subtitle">{subtitle}</div>}
+                {children}
+            </button>
+        );
+
         function App() {
             const [data, setData] = useState(null);
             const [error, setError] = useState('');
+            const [stageOrCcMode, setStageOrCcMode] = useState('stage');
 
             const [selectedCharacters, setSelectedCharacters] = useState(new Set());
             const [selectedWeapons, setSelectedWeapons] = useState(new Set());
-            const [weaponCounts, setWeaponCounts] = useState({});
             const [selectedStages, setSelectedStages] = useState(new Set());
             const [selectedCcs, setSelectedCcs] = useState(new Set());
-            const [stageOrCcMode, setStageOrCcMode] = useState('stage');
+
+            const [weaponCounts, setWeaponCounts] = useState({});
 
             const [characterSearch, setCharacterSearch] = useState('');
-            const [characterClassFilter, setCharacterClassFilter] = useState('All');
-            const [characterElementFilter, setCharacterElementFilter] = useState('All');
             const [weaponSearch, setWeaponSearch] = useState('');
-            const [weaponTypeFilter, setWeaponTypeFilter] = useState('All');
             const [stageSearch, setStageSearch] = useState('');
+            const [ccSearch, setCcSearch] = useState('');
+
+            const [characterClassFilters, setCharacterClassFilters] = useState(new Set());
+            const [characterElementFilters, setCharacterElementFilters] = useState(new Set());
+            const [characterFactionFilters, setCharacterFactionFilters] = useState(new Set());
+            const [characterWeaponTypeFilters, setCharacterWeaponTypeFilters] = useState(new Set());
+            const [weaponCategoryFilters, setWeaponCategoryFilters] = useState(new Set());
 
             const [output, setOutput] = useState(null);
 
@@ -137,42 +221,63 @@
                     })
                     .then((json) => {
                         const stagesFlat = flattenStages(json.stages);
-                        setData({ ...json, stagesFlat });
+                        const withStageFlat = { ...json, stagesFlat };
+                        setData(withStageFlat);
 
                         setSelectedCharacters(new Set(json.characters.map((c) => c.name)));
                         setSelectedWeapons(new Set(json.weapons.map((w) => w.name)));
                         setSelectedStages(new Set(stagesFlat.map((s) => s.id)));
                         setSelectedCcs(new Set((json.ccs || []).map((cc) => cc.name)));
 
+                        setCharacterClassFilters(new Set([]));
+                        setCharacterElementFilters(new Set([]));
+                        setCharacterFactionFilters(new Set([]));
+                        setCharacterWeaponTypeFilters(new Set([]));
+                        setWeaponCategoryFilters(new Set([]));
+
                         const initialWeaponCounts = {};
-                        json.weapons.forEach((w) => {
-                            initialWeaponCounts[w.name] = 1;
+                        json.weapons.forEach((weapon) => {
+                            initialWeaponCounts[weapon.name] = 1;
                         });
                         setWeaponCounts(initialWeaponCounts);
                     })
-                    .catch((err) => {
-                        setError(err.message || 'Failed to load data');
-                    });
+                    .catch((err) => setError(err.message || 'Failed to load data'));
             }, []);
+
+            useEffect(() => {
+                if (!data) return;
+                if (stageOrCcMode === 'stage') {
+                    setSelectedStages((prev) => (prev.size > 0 ? prev : new Set(data.stagesFlat.map((stage) => stage.id))));
+                } else {
+                    setSelectedCcs((prev) => (prev.size > 0 ? prev : new Set((data.ccs || []).map((cc) => cc.name))));
+                }
+            }, [stageOrCcMode, data]);
 
             const filteredCharacters = useMemo(() => {
                 if (!data) return [];
                 return data.characters.filter((character) => {
-                    const matchesSearch = character.name.toLowerCase().includes(characterSearch.toLowerCase());
-                    const matchesClass = characterClassFilter === 'All' || character.class === characterClassFilter;
-                    const matchesElement = characterElementFilter === 'All' || character.element === characterElementFilter;
-                    return matchesSearch && matchesClass && matchesElement;
+                    const byName = character.name.toLowerCase().includes(characterSearch.toLowerCase());
+                    const byClass = characterClassFilters.size === 0 || characterClassFilters.has(character.class);
+                    const byElement = characterElementFilters.size === 0 || characterElementFilters.has(character.element);
+                    const byFaction = characterFactionFilters.size === 0 || characterFactionFilters.has(character.faction);
+                    const byWeaponType = characterWeaponTypeFilters.size === 0 || characterWeaponTypeFilters.has(character.type);
+                    return byName && byClass && byElement && byFaction && byWeaponType;
                 });
-            }, [data, characterSearch, characterClassFilter, characterElementFilter]);
+            }, [data, characterSearch, characterClassFilters, characterElementFilters, characterFactionFilters, characterWeaponTypeFilters]);
 
             const filteredWeapons = useMemo(() => {
                 if (!data) return [];
                 return data.weapons.filter((weapon) => {
-                    const matchesSearch = weapon.name.toLowerCase().includes(weaponSearch.toLowerCase());
-                    const matchesType = weaponTypeFilter === 'All' || weapon.type === weaponTypeFilter;
-                    return matchesSearch && matchesType;
-                });
-            }, [data, weaponSearch, weaponTypeFilter]);
+                    const byName = weapon.name.toLowerCase().includes(weaponSearch.toLowerCase());
+                    const byCategory = weaponCategoryFilters.size === 0 || weaponCategoryFilters.has(weapon.type);
+                    return byName && byCategory;
+                }).sort(sortByRarityThenName);
+            }, [data, weaponSearch, weaponCategoryFilters]);
+
+            const sortedFilteredCharacters = useMemo(
+                () => [...filteredCharacters].sort(sortByRarityThenName),
+                [filteredCharacters]
+            );
 
             const filteredStages = useMemo(() => {
                 if (!data) return [];
@@ -182,55 +287,49 @@
                 });
             }, [data, stageSearch]);
 
+            const groupedStages = useMemo(() => {
+                const grouped = {};
+                (filteredStages || []).forEach((stage) => {
+                    const key = `${stage.zone} -> ${stage.category}`;
+                    if (!grouped[key]) grouped[key] = [];
+                    grouped[key].push(stage);
+                });
+                Object.keys(grouped).forEach((key) => {
+                    grouped[key].sort((a, b) => a.name.localeCompare(b.name));
+                });
+                return grouped;
+            }, [filteredStages]);
+
+
             const filteredCcs = useMemo(() => {
                 if (!data) return [];
-                const q = stageSearch.toLowerCase();
-                return (data.ccs || []).filter((cc) => cc.name.toLowerCase().includes(q));
-            }, [data, stageSearch]);
-
-            const updateSetSelection = (setter, key) => {
-                setter((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(key)) next.delete(key);
-                    else next.add(key);
-                    return next;
-                });
-            };
-
-            const setAllVisible = (items, getKey, setter, checked) => {
-                setter((prev) => {
-                    const next = new Set(prev);
-                    items.forEach((item) => {
-                        const key = getKey(item);
-                        if (checked) next.add(key);
-                        else next.delete(key);
-                    });
-                    return next;
-                });
-            };
+                return (data.ccs || []).filter((cc) => cc.name.toLowerCase().includes(ccSearch.toLowerCase()));
+            }, [data, ccSearch]);
 
             const runRandomizer = () => {
                 if (!data) return;
 
-                const availableCharacters = data.characters.filter((c) => selectedCharacters.has(c.name));
+                const availableCharacters = data.characters.filter((character) => selectedCharacters.has(character.name));
                 if (availableCharacters.length < 4) {
                     setOutput({ error: 'Select at least 4 characters.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode });
                     return;
                 }
 
-                const selectedTeam = pickUnique(availableCharacters, 4);
+                const team = pickUnique(availableCharacters, 4);
 
-                const availableWeapons = data.weapons.filter((w) => selectedWeapons.has(w.name) && (weaponCounts[w.name] || 0) > 0);
+                const availableWeapons = data.weapons.filter(
+                    (weapon) => selectedWeapons.has(weapon.name) && (weaponCounts[weapon.name] || 0) > 0
+                );
                 if (availableWeapons.length === 0) {
                     setOutput({ error: 'Select at least one weapon with count > 0.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode });
                     return;
                 }
 
-                const assignment = assignWeaponsToCharacters(selectedTeam, availableWeapons, weaponCounts);
+                const assignment = assignWeaponsToCharacters(team, availableWeapons, weaponCounts);
                 if (!assignment) {
                     setOutput({
-                        error: 'Cannot assign weapons to all 4 characters. Increase counts or select more compatible weapon types.',
-                        team: selectedTeam,
+                        error: 'Cannot assign weapons to all 4 characters. Increase counts or select more compatible weapon categories.',
+                        team,
                         weapons: [],
                         stageOrCc: null,
                         mode: stageOrCcMode
@@ -238,42 +337,39 @@
                     return;
                 }
 
-                let stageOrCc = null;
                 if (stageOrCcMode === 'stage') {
-                    const availableStageList = data.stagesFlat.filter((s) => selectedStages.has(s.id));
+                    const availableStageList = data.stagesFlat.filter((stage) => selectedStages.has(stage.id));
                     if (availableStageList.length === 0) {
-                        setOutput({ error: 'Select at least one stage.', team: selectedTeam, weapons: [], stageOrCc: null, mode: 'stage' });
+                        setOutput({ error: 'Select at least one stage.', team, weapons: [], stageOrCc: null, mode: 'stage' });
                         return;
                     }
-                    stageOrCc = getRandomItem(availableStageList);
-                } else {
-                    const availableCcList = (data.ccs || []).filter((cc) => selectedCcs.has(cc.name));
-                    if (availableCcList.length === 0) {
-                        setOutput({ error: 'Select at least one CC.', team: selectedTeam, weapons: [], stageOrCc: null, mode: 'cc' });
-                        return;
-                    }
-                    stageOrCc = getRandomItem(availableCcList);
+                    setOutput({
+                        error: '',
+                        team,
+                        weapons: team.map((character) => ({ characterName: character.name, weapon: assignment[character.name] })),
+                        stageOrCc: getRandomItem(availableStageList),
+                        mode: 'stage'
+                    });
+                    return;
+                }
+
+                const availableCcList = (data.ccs || []).filter((cc) => selectedCcs.has(cc.name));
+                if (availableCcList.length === 0) {
+                    setOutput({ error: 'Select at least one CC.', team, weapons: [], stageOrCc: null, mode: 'cc' });
+                    return;
                 }
 
                 setOutput({
                     error: '',
-                    team: selectedTeam,
-                    weapons: selectedTeam.map((character) => ({
-                        characterName: character.name,
-                        weapon: assignment[character.name]
-                    })),
-                    stageOrCc,
-                    mode: stageOrCcMode
+                    team,
+                    weapons: team.map((character) => ({ characterName: character.name, weapon: assignment[character.name] })),
+                    stageOrCc: getRandomItem(availableCcList),
+                    mode: 'cc'
                 });
             };
 
-            if (error) {
-                return <div className="loading-overlay">{error}</div>;
-            }
-
-            if (!data) {
-                return <div className="loading-overlay">Loading data...</div>;
-            }
+            if (error) return <div className="loading-overlay">{error}</div>;
+            if (!data) return <div className="loading-overlay">Loading data...</div>;
 
             return (
                 <div className="container-fluid py-4 app-shell">
@@ -284,33 +380,46 @@
                     <section className="result-card mb-4">
                         <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                             <h4 className="m-0">Randomized Output</h4>
-                            <button className="action-btn" onClick={runRandomizer}>RANDOMIZE</button>
+                            <button type="button" className="action-btn" onClick={runRandomizer}>RANDOMIZE</button>
                         </div>
 
                         {!output && <div className="empty-state">Press RANDOMIZE to generate a team.</div>}
-
                         {output && (
                             <div className="output-grid">
                                 {output.error && <div className="error-text">{output.error}</div>}
 
                                 <div className="output-group">
                                     <div className="output-label">Characters</div>
-                                    <div className="chips-wrap">
+                                    <div className="tile-grid output-tile-grid">
                                         {output.team.map((character, idx) => (
-                                            <span className="chip" key={`character-${character.name}-${idx}`}>
-                                                {`Character ${idx + 1}: ${character.name}`}
-                                            </span>
+                                            <SquareTile
+                                                key={`out-char-${character.name}-${idx}`}
+                                                selected={true}
+                                                image={`images/character_${normalizeName(character.name)}.png`}
+                                                placeholderImage="images/placeholder_character.svg"
+                                                title={character.name}
+                                                tooltip={character.name}
+                                                rarity={character.rarity}
+                                                useImageRarityBg={true}
+                                            />
                                         ))}
                                     </div>
                                 </div>
 
                                 <div className="output-group">
                                     <div className="output-label">Weapons</div>
-                                    <div className="chips-wrap">
+                                    <div className="tile-grid output-tile-grid">
                                         {output.weapons.map((entry, idx) => (
-                                            <span className="chip" key={`weapon-${entry.characterName}-${idx}`}>
-                                                {`Weapon ${idx + 1}: ${entry.weapon.name} -> ${entry.characterName}`}
-                                            </span>
+                                            <SquareTile
+                                                key={`out-weapon-${entry.weapon.name}-${idx}`}
+                                                selected={true}
+                                                image={`images/weapon_${normalizeName(entry.weapon.name)}.png`}
+                                                placeholderImage="images/placeholder_weapon.svg"
+                                                title={entry.weapon.name}
+                                                tooltip={entry.weapon.name}
+                                                rarity={entry.weapon.rarity}
+                                                useImageRarityBg={true}
+                                            />
                                         ))}
                                     </div>
                                 </div>
@@ -318,9 +427,16 @@
                                 <div className="output-group">
                                     <div className="output-label">{output.mode === 'stage' ? 'Stage' : 'CC'}</div>
                                     {output.mode === 'stage' && output.stageOrCc && (
-                                        <span className="chip chip-stage">
-                                            {`${output.stageOrCc.zone} / ${output.stageOrCc.category} / ${output.stageOrCc.name} (Lv ${output.stageOrCc.lv})`}
-                                        </span>
+                                        <div className="tile-grid output-tile-grid">
+                                            <SquareTile
+                                                selected={true}
+                                                image={`images/stage_${normalizeName(`${output.stageOrCc.zone}_${output.stageOrCc.category}`)}.png`}
+                                                placeholderImage="images/placeholder_stage.svg"
+                                                title={output.stageOrCc.name}
+                                                tooltip={output.stageOrCc.name}
+                                                badge={`Lv ${output.stageOrCc.lv}`}
+                                            />
+                                        </div>
                                     )}
                                     {output.mode === 'cc' && output.stageOrCc && (
                                         <div className="cc-placeholder-wrap">
@@ -345,31 +461,83 @@
                                         value={characterSearch}
                                         onChange={(e) => setCharacterSearch(e.target.value)}
                                     />
-                                    <select aria-label="Filter characters by class" className="filter-select" value={characterClassFilter} onChange={(e) => setCharacterClassFilter(e.target.value)}>
-                                        <option value="All">All Classes</option>
-                                        {data.classes.map((item) => <option key={item} value={item}>{item}</option>)}
-                                    </select>
-                                    <select aria-label="Filter characters by element" className="filter-select" value={characterElementFilter} onChange={(e) => setCharacterElementFilter(e.target.value)}>
-                                        <option value="All">All Elements</option>
-                                        {data.elements.map((item) => <option key={item} value={item}>{item}</option>)}
-                                    </select>
                                 </div>
-                                <div className="control-row">
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredCharacters, (x) => x.name, setSelectedCharacters, true)}>Select visible</button>
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredCharacters, (x) => x.name, setSelectedCharacters, false)}>Clear visible</button>
+
+                                <AccordionSection title="Filters" defaultOpen={false}>
+
+                                    <ChipFilterGroup
+                                        title="Class"
+                                        options={data.classes || []}
+                                        selectedSet={characterClassFilters}
+                                        onToggle={(value) => setCharacterClassFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setCharacterClassFilters(new Set(data.classes || []))}
+                                        onClear={() => setCharacterClassFilters(new Set())}
+                                    />
+                                    <ChipFilterGroup
+                                        title="Element"
+                                        options={data.elements || []}
+                                        selectedSet={characterElementFilters}
+                                        onToggle={(value) => setCharacterElementFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setCharacterElementFilters(new Set(data.elements || []))}
+                                        onClear={() => setCharacterElementFilters(new Set())}
+                                    />
+                                    <ChipFilterGroup
+                                        title="Faction"
+                                        options={data.fractions || []}
+                                        selectedSet={characterFactionFilters}
+                                        onToggle={(value) => setCharacterFactionFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setCharacterFactionFilters(new Set(data.fractions || []))}
+                                        onClear={() => setCharacterFactionFilters(new Set())}
+                                    />
+                                    <ChipFilterGroup
+                                        title="Weapon Type"
+                                        options={data.weaponcategory || []}
+                                        selectedSet={characterWeaponTypeFilters}
+                                        onToggle={(value) => setCharacterWeaponTypeFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setCharacterWeaponTypeFilters(new Set(data.weaponcategory || []))}
+                                        onClear={() => setCharacterWeaponTypeFilters(new Set())}
+                                    />
+                                </AccordionSection>
+
+                                <div className="control-row mt-2">
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedCharacters((prev) => {
+                                            const next = new Set(prev);
+                                            filteredCharacters.forEach((item) => next.add(item.name));
+                                            return next;
+                                        })}
+                                    >
+                                        Select visible
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedCharacters((prev) => {
+                                            const next = new Set(prev);
+                                            filteredCharacters.forEach((item) => next.delete(item.name));
+                                            return next;
+                                        })}
+                                    >
+                                        Clear visible
+                                    </button>
                                     <span className="count-text">Selected: {selectedCharacters.size}</span>
                                 </div>
-                                <div className="list-wrap">
-                                    {filteredCharacters.map((character) => (
-                                        <label className="list-item" key={character.name}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedCharacters.has(character.name)}
-                                                onChange={() => updateSetSelection(setSelectedCharacters, character.name)}
-                                            />
-                                            <span className="item-main">{character.name}</span>
-                                            <span className="item-meta">{`${character.class} | ${character.type} | ${character.element}`}</span>
-                                        </label>
+
+                                <div className="tile-grid">
+                                    {sortedFilteredCharacters.map((character) => (
+                                        <SquareTile
+                                            key={character.name}
+                                            selected={selectedCharacters.has(character.name)}
+                                            onClick={() => setSelectedCharacters((prev) => toggleInSet(prev, character.name))}
+                                            image={`images/character_${normalizeName(character.name)}.png`}
+                                            placeholderImage="images/placeholder_character.svg"
+                                            title={character.name}
+                                            tooltip={character.name}
+                                            rarity={character.rarity}
+                                            useImageRarityBg={true}
+                                        />
                                     ))}
                                 </div>
                             </AccordionSection>
@@ -384,34 +552,65 @@
                                         value={weaponSearch}
                                         onChange={(e) => setWeaponSearch(e.target.value)}
                                     />
-                                    <select aria-label="Filter weapons by type" className="filter-select" value={weaponTypeFilter} onChange={(e) => setWeaponTypeFilter(e.target.value)}>
-                                        <option value="All">All Weapon Types</option>
-                                        {data.weaponcategory.map((item) => <option key={item} value={item}>{item}</option>)}
-                                    </select>
                                 </div>
-                                <div className="control-row">
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredWeapons, (x) => x.name, setSelectedWeapons, true)}>Select visible</button>
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredWeapons, (x) => x.name, setSelectedWeapons, false)}>Clear visible</button>
+
+                                <AccordionSection title="Filters" defaultOpen={false}>
+
+                                    <ChipFilterGroup
+                                        title="Weapon Category"
+                                        options={data.weaponcategory || []}
+                                        selectedSet={weaponCategoryFilters}
+                                        onToggle={(value) => setWeaponCategoryFilters((prev) => toggleInSet(prev, value))}
+                                        onSelectAll={() => setWeaponCategoryFilters(new Set(data.weaponcategory || []))}
+                                        onClear={() => setWeaponCategoryFilters(new Set())}
+                                    />
+                                </AccordionSection>
+
+                                <div className="control-row mt-2">
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedWeapons((prev) => {
+                                            const next = new Set(prev);
+                                            filteredWeapons.forEach((item) => next.add(item.name));
+                                            return next;
+                                        })}
+                                    >
+                                        Select visible
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedWeapons((prev) => {
+                                            const next = new Set(prev);
+                                            filteredWeapons.forEach((item) => next.delete(item.name));
+                                            return next;
+                                        })}
+                                    >
+                                        Clear visible
+                                    </button>
                                     <span className="count-text">Selected: {selectedWeapons.size}</span>
                                 </div>
-                                <div className="list-wrap">
+
+                                <div className="tile-grid">
                                     {filteredWeapons.map((weapon) => (
-                                        <label className="list-item weapon-item" key={weapon.name}>
-                                            <div className="d-flex align-items-center gap-2 flex-wrap">
+                                        <SquareTile
+                                            key={weapon.name}
+                                            selected={selectedWeapons.has(weapon.name)}
+                                            onClick={() => setSelectedWeapons((prev) => toggleInSet(prev, weapon.name))}
+                                            image={`images/weapon_${normalizeName(weapon.name)}.png`}
+                                            placeholderImage="images/placeholder_weapon.svg"
+                                            title={weapon.name}
+                                            tooltip={weapon.name}
+                                            rarity={weapon.rarity}
+                                            useImageRarityBg={true}
+                                        >
+                                            <div className="count-input-wrap" onClick={(e) => e.stopPropagation()}>
                                                 <input
-                                                    type="checkbox"
-                                                    checked={selectedWeapons.has(weapon.name)}
-                                                    onChange={() => updateSetSelection(setSelectedWeapons, weapon.name)}
-                                                />
-                                                <span className="item-main">{weapon.name}</span>
-                                                <span className="item-meta">{`${weapon.type} | ${weapon.rarity}*`}</span>
-                                            </div>
-                                            <div className="count-input-wrap">
-                                                <label className="count-label" htmlFor={`count-${weapon.name}`}>Count</label>
-                                                <input
-                                                    id={`count-${weapon.name}`}
+                                                    id={`count-${normalizeName(weapon.name)}`}
                                                     className="count-input"
                                                     type="number"
+                                                    aria-label={`Count for ${weapon.name}`}
                                                     min="0"
                                                     value={weaponCounts[weapon.name] || 0}
                                                     onChange={(e) => {
@@ -423,7 +622,7 @@
                                                     }}
                                                 />
                                             </div>
-                                        </label>
+                                        </SquareTile>
                                     ))}
                                 </div>
                             </AccordionSection>
@@ -451,60 +650,121 @@
                                         <span>CC</span>
                                     </label>
                                 </div>
-                                <div className="muted-note">Only one mode is used in output: Stage or CC (never both).</div>
+                                <div className="muted-note">Switching mode hides and turns off the other section selection.</div>
                             </AccordionSection>
 
-                            <AccordionSection title="Stages" defaultOpen={true}>
-                                <div className="filter-row">
-                                    <input
-                                        className="filter-input"
-                                        type="text"
-                                        aria-label="Search stages"
-                                        placeholder="Search stage..."
-                                        value={stageSearch}
-                                        onChange={(e) => setStageSearch(e.target.value)}
-                                    />
-                                </div>
-                                <div className="control-row">
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredStages, (x) => x.id, setSelectedStages, true)}>Select visible</button>
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredStages, (x) => x.id, setSelectedStages, false)}>Clear visible</button>
-                                    <span className="count-text">Selected: {selectedStages.size}</span>
-                                </div>
-                                <div className="list-wrap">
-                                    {filteredStages.map((stage) => (
-                                        <label className="list-item" key={stage.id}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedStages.has(stage.id)}
-                                                onChange={() => updateSetSelection(setSelectedStages, stage.id)}
-                                            />
-                                            <span className="item-main">{stage.name}</span>
-                                            <span className="item-meta">{`${stage.zone} | ${stage.category} | Lv ${stage.lv}`}</span>
-                                        </label>
+                            {stageOrCcMode === 'stage' && (
+                                <AccordionSection title="Stages" defaultOpen={true}>
+                                    <div className="filter-row">
+                                        <input
+                                            className="filter-input"
+                                            type="text"
+                                            aria-label="Search stages"
+                                            placeholder="Search stage..."
+                                            value={stageSearch}
+                                            onChange={(e) => setStageSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="control-row">
+                                        <button
+                                            type="button"
+                                            className="mini-btn"
+                                            onClick={() => setSelectedStages((prev) => {
+                                                const next = new Set(prev);
+                                                filteredStages.forEach((item) => next.add(item.id));
+                                                return next;
+                                            })}
+                                        >
+                                            Select visible
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mini-btn"
+                                            onClick={() => setSelectedStages((prev) => {
+                                                const next = new Set(prev);
+                                                filteredStages.forEach((item) => next.delete(item.id));
+                                                return next;
+                                            })}
+                                        >
+                                            Clear visible
+                                        </button>
+                                        <span className="count-text">Selected: {selectedStages.size}</span>
+                                    </div>
+                                    {Object.entries(groupedStages).map(([header, items]) => (
+                                        <div key={header} className="stage-group-block">
+                                            <div className="stage-group-header">{header}</div>
+                                            <div className="tile-grid">
+                                                {items.map((stage) => (
+                                                    <SquareTile
+                                                        key={stage.id}
+                                                        selected={selectedStages.has(stage.id)}
+                                                        onClick={() => setSelectedStages((prev) => toggleInSet(prev, stage.id))}
+                                                        image={`images/stage_${normalizeName(`${stage.zone}_${stage.category}`)}.png`}
+                                                        placeholderImage="images/placeholder_stage.svg"
+                                                        title={stage.name}
+                                                        tooltip={stage.name}
+                                                        badge={`Lv ${stage.lv}`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
                                     ))}
-                                </div>
-                            </AccordionSection>
+                                </AccordionSection>
+                            )}
 
-                            <AccordionSection title="CC" defaultOpen={true}>
-                                <div className="control-row">
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredCcs, (x) => x.name, setSelectedCcs, true)}>Select all</button>
-                                    <button className="mini-btn" onClick={() => setAllVisible(filteredCcs, (x) => x.name, setSelectedCcs, false)}>Clear all</button>
-                                    <span className="count-text">Selected: {selectedCcs.size}</span>
-                                </div>
-                                <div className="list-wrap">
-                                    {filteredCcs.map((cc) => (
-                                        <label className="list-item" key={cc.name}>
-                                            <input
-                                                type="checkbox"
-                                                checked={selectedCcs.has(cc.name)}
-                                                onChange={() => updateSetSelection(setSelectedCcs, cc.name)}
+                            {stageOrCcMode === 'cc' && (
+                                <AccordionSection title="CC" defaultOpen={true}>
+                                    <div className="filter-row">
+                                        <input
+                                            className="filter-input"
+                                            type="text"
+                                            aria-label="Search cc"
+                                            placeholder="Search CC..."
+                                            value={ccSearch}
+                                            onChange={(e) => setCcSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="control-row">
+                                        <button
+                                            type="button"
+                                            className="mini-btn"
+                                            onClick={() => setSelectedCcs((prev) => {
+                                                const next = new Set(prev);
+                                                filteredCcs.forEach((item) => next.add(item.name));
+                                                return next;
+                                            })}
+                                        >
+                                            Select visible
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="mini-btn"
+                                            onClick={() => setSelectedCcs((prev) => {
+                                                const next = new Set(prev);
+                                                filteredCcs.forEach((item) => next.delete(item.name));
+                                                return next;
+                                            })}
+                                        >
+                                            Clear visible
+                                        </button>
+                                        <span className="count-text">Selected: {selectedCcs.size}</span>
+                                    </div>
+                                    <div className="tile-grid">
+                                        {filteredCcs.map((cc) => (
+                                            <SquareTile
+                                                key={cc.name}
+                                                selected={selectedCcs.has(cc.name)}
+                                                onClick={() => setSelectedCcs((prev) => toggleInSet(prev, cc.name))}
+                                                image="images/placeholder_stage.svg"
+                                                placeholderImage="images/placeholder_stage.svg"
+                                                title={cc.name}
+                                                subtitle="Tags randomization not implemented"
+                                                showText={true}
                                             />
-                                            <span className="item-main">{cc.name}</span>
-                                            <span className="item-meta">Tags randomization not implemented yet</span>
-                                        </label>
-                                    ))}
-                                </div>
-                            </AccordionSection>
+                                        ))}
+                                    </div>
+                                </AccordionSection>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -516,4 +776,3 @@
     </script>
 </body>
 </html>
-
