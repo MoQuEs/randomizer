@@ -1,6 +1,26 @@
 {
   "characters": [
     {
+      "name": "Estella",
+      "class": "Guard",
+      "type": "Polearm",
+      "rarity": 4,
+      "element": "Cryo",
+      "faction": "Endfield Industries",
+      "main": "Will",
+      "sub": "Strength"
+    },
+    {
+      "name": "Catcher",
+      "class": "Defender",
+      "type": "Greatsword",
+      "rarity": 4,
+      "element": "Physical",
+      "faction": "Endfield Industries",
+      "main": "Strength",
+      "sub": "Will"
+    },
+    {
       "name": "Antal",
       "class": "Supporter",
       "type": "Arts Unit",
@@ -9,6 +29,26 @@
       "faction": "Endfield Industries",
       "main": "Intellect",
       "sub": "Strength"
+    },
+    {
+      "name": "Fluorite",
+      "class": "Caster",
+      "type": "Handcannon",
+      "rarity": 4,
+      "element": "Nature",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Akekuri",
+      "class": "Vanguard",
+      "type": "Sword",
+      "rarity": 4,
+      "element": "Heat",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Intellect"
     },
     {
       "name": "Chen Qianyu",
@@ -21,6 +61,66 @@
       "sub": "Strength"
     },
     {
+      "name": "Snowshine",
+      "class": "Defender",
+      "type": "Greatsword",
+      "rarity": 5,
+      "element": "Cryo",
+      "faction": "Rhodes Island",
+      "main": "Strength",
+      "sub": "Will"
+    },
+    {
+      "name": "Xaihi",
+      "class": "Supporter",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "element": "Cryo",
+      "faction": "Cabal of Tranquility",
+      "main": "Will",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Perlica",
+      "class": "Caster",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "element": "Electric",
+      "faction": "Endfield Industries",
+      "main": "Intellect",
+      "sub": "Will"
+    },
+    {
+      "name": "Wulfgard",
+      "class": "Caster",
+      "type": "Handcannon",
+      "rarity": 5,
+      "element": "Heat",
+      "faction": "Endfield Industries",
+      "main": "Strength",
+      "sub": "Agility"
+    },
+    {
+      "name": "Da Pan",
+      "class": "Striker",
+      "type": "Greatsword",
+      "rarity": 5,
+      "element": "Physical",
+      "faction": "HAS",
+      "main": "Strength",
+      "sub": "Will"
+    },
+    {
+      "name": "Avywenna",
+      "class": "Striker",
+      "type": "Polearm",
+      "rarity": 5,
+      "element": "Electric",
+      "faction": "TGCC",
+      "main": "Will",
+      "sub": "Agility"
+    },
+    {
       "name": "Arclight",
       "class": "Vanguard",
       "type": "Sword",
@@ -29,6 +129,116 @@
       "faction": "Hannabit Circuit",
       "main": "Agility",
       "sub": "Intellect"
+    },
+    {
+      "name": "Alesh",
+      "class": "Vanguard",
+      "type": "Sword",
+      "rarity": 5,
+      "element": "Cryo",
+      "faction": "UWST",
+      "main": "Strength",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Rossi",
+      "class": "Guard",
+      "type": "Sword",
+      "rarity": 6,
+      "element": "Physical",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Lifeng",
+      "class": "Guard",
+      "type": "Polearm",
+      "rarity": 6,
+      "element": "Physical",
+      "faction": "HAS",
+      "main": "Agility",
+      "sub": "Strength"
+    },
+    {
+      "name": "Endministrator",
+      "class": "Guard",
+      "type": "Sword",
+      "rarity": 6,
+      "element": "Physical",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Strength"
+    },
+    {
+      "name": "Ember",
+      "class": "Defender",
+      "type": "Greatsword",
+      "rarity": 6,
+      "element": "Heat",
+      "faction": "Order of Steel Oath",
+      "main": "Strength",
+      "sub": "Will"
+    },
+    {
+      "name": "Ardelia",
+      "class": "Supporter",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "element": "Nature",
+      "faction": "Rhodes Island",
+      "main": "Intellect",
+      "sub": "Will"
+    },
+    {
+      "name": "Gilberta",
+      "class": "Supporter",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "element": "Nature",
+      "faction": "Rhodes Island",
+      "main": "Will",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Tangtang",
+      "class": "Caster",
+      "type": "Handcannon",
+      "rarity": 6,
+      "element": "Cryo",
+      "faction": "Endfield Industries",
+      "main": "Agility",
+      "sub": "Strength"
+    },
+    {
+      "name": "Laevatain",
+      "class": "Striker",
+      "type": "Sword",
+      "rarity": 6,
+      "element": "Heat",
+      "faction": "Rhodes Island",
+      "main": "Intellect",
+      "sub": "Strength"
+    },
+    {
+      "name": "Last Rite",
+      "class": "Striker",
+      "type": "Greatsword",
+      "rarity": 6,
+      "element": "Cryo",
+      "faction": "Ses'qa",
+      "main": "Strength",
+      "sub": "Will"
+    },
+    {
+      "name": "Yvonne",
+      "class": "Striker",
+      "type": "Handcannon",
+      "rarity": 6,
+      "element": "Cryo",
+      "faction": "Endfield Industries",
+      "main": "Intellect",
+      "sub": "Agility"
     },
     {
       "name": "Zhuang Fangyi",
@@ -41,67 +251,33 @@
       "sub": "Intellect"
     },
     {
-      "name": "Ember",
-      "class": "Caster",
-      "type": "Arts Unit",
-      "rarity": 5,
-      "element": "Heat",
-      "faction": "Endfield Industries",
-      "main": "Will",
-      "sub": "Intellect"
-    },
-    {
-      "name": "Gilberta",
-      "class": "Defender",
-      "type": "Greatsword",
-      "rarity": 5,
-      "element": "Physical",
-      "faction": "TGCC",
-      "main": "Strength",
-      "sub": "Will"
-    },
-    {
-      "name": "Laevatain",
-      "class": "Striker",
+      "name": "Pogranichnik",
+      "class": "Vanguard",
       "type": "Sword",
       "rarity": 6,
-      "element": "Heat",
-      "faction": "HAS",
-      "main": "Agility",
-      "sub": "Strength"
-    },
-    {
-      "name": "Rossi",
-      "class": "Vanguard",
-      "type": "Handcannon",
-      "rarity": 3,
       "element": "Physical",
-      "faction": "Endfield Industries",
-      "main": "Agility",
-      "sub": "Strength"
-    },
-    {
-      "name": "Snowshine",
-      "class": "Guard",
-      "type": "Sword",
-      "rarity": 4,
-      "element": "Cryo",
-      "faction": "Rhodes Island",
-      "main": "Agility",
-      "sub": "Intellect"
-    },
-    {
-      "name": "Yvonne",
-      "class": "Supporter",
-      "type": "Arts Unit",
-      "rarity": 4,
-      "element": "Nature",
       "faction": "Rhodes Island",
       "main": "Will",
-      "sub": "Intellect"
+      "sub": "Agility"
     }
   ],
   "weapons": [
+    {
+      "name": "Sundered Prince",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Strength",
+      "sec_stat": "Critical Rate Boost",
+      "skill_stat": "Crusher"
+    },
+    {
+      "name": "Artzy Tyrannical",
+      "type": "Handcannon",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Critical Rate Boost",
+      "skill_stat": "Fracture"
+    },
     {
       "name": "Delivery Guaranteed",
       "type": "Arts Unit",
@@ -109,6 +285,150 @@
       "attr_stat": "Will",
       "sec_stat": "Ultimate Gain Boost",
       "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Forgeborn Scathe",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Twilight"
+    },
+    {
+      "name": "Thermite Cutter",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Flow"
+    },
+    {
+      "name": "Umbral Torch",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Heat DMG Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Former Finery",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "HP Boost",
+      "skill_stat": "Efficacy"
+    },
+    {
+      "name": "Thunderberge",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Strength",
+      "sec_stat": "HP Boost",
+      "skill_stat": "Medicant"
+    },
+    {
+      "name": "Mountain Bearer",
+      "type": "Polearm",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Efficacy"
+    },
+    {
+      "name": "Valiant",
+      "type": "Polearm",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Combative"
+    },
+    {
+      "name": "Wedge",
+      "type": "Handcannon",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Critical Rate Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Chivalric Virtues",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "HP Boost",
+      "skill_stat": "Medicant"
+    },
+    {
+      "name": "Detonation Unit",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Arts Intensity Boost",
+      "skill_stat": "Detonate"
+    },
+    {
+      "name": "Oblivion",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Arts DMG Boost",
+      "skill_stat": "Twilight"
+    },
+    {
+      "name": "Opus: Etch Figure",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Nature DMG Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Grand Vision",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Never Rest",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Flow"
+    },
+    {
+      "name": "Rapid Ascent",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Critical Rate Boost",
+      "skill_stat": "Twilight"
+    },
+    {
+      "name": "Eminent Repute",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Brutality"
+    },
+    {
+      "name": "White Night Nova",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Arts Intensity Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Khravengger",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Strength",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Detonate"
     },
     {
       "name": "Exemplar",
@@ -119,12 +439,172 @@
       "skill_stat": "Suppression"
     },
     {
+      "name": "JET",
+      "type": "Polearm",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Navigator",
+      "type": "Handcannon",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Cryo DMG Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Clannibal",
+      "type": "Handcannon",
+      "rarity": 6,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "Arts DMG Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Dreams of the Starry Beach",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Treatment Efficiency Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Sundering Steel",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Agility",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Combative"
+    },
+    {
+      "name": "Wild Wanderer",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "attr_stat": "Intellect",
+      "sec_stat": "Electric DMG Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Fortmaker",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Intellect",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Inspiring"
+    },
+    {
+      "name": "Finishing Call",
+      "type": "Greatsword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "HP Boost",
+      "skill_stat": "Medicant"
+    },
+    {
+      "name": "Chimeric Justice",
+      "type": "Polearm",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Brutality"
+    },
+    {
+      "name": "Rational Farewell",
+      "type": "Handcannon",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Heat DMG Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Monaihe",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "attr_stat": "Will",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Inspiring"
+    },
+    {
+      "name": "Stanza of Memorials",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "attr_stat": "Intellect",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Twilight"
+    },
+    {
+      "name": "Finchaser 3.0",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Cryo DMG Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Twelve Questions",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Agility",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "OBJ Edge of Lightness",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Agility",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Flow"
+    },
+    {
+      "name": "Aspirant",
+      "type": "Sword",
+      "rarity": 5,
+      "attr_stat": "Agility",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Twilight"
+    },
+    {
+      "name": "Seeker of Dark Lung",
+      "type": "Greatsword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Detonate"
+    },
+    {
       "name": "Ancient Canal",
       "type": "Greatsword",
       "rarity": 5,
       "attr_stat": "Strength",
       "sec_stat": "Arts Intensity Boost",
       "skill_stat": "Brutality"
+    },
+    {
+      "name": "OBJ Heavy Burden",
+      "type": "Greatsword",
+      "rarity": 5,
+      "attr_stat": "Strength",
+      "sec_stat": "HP Boost",
+      "skill_stat": "Efficacy"
+    },
+    {
+      "name": "OBJ Razorhorn",
+      "type": "Polearm",
+      "rarity": 5,
+      "attr_stat": "Will",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Opus: The Living",
+      "type": "Handcannon",
+      "rarity": 5,
+      "attr_stat": "Agility",
+      "sec_stat": "Arts DMG Boost",
+      "skill_stat": "Infliction"
     },
     {
       "name": "OBJ Velocitous",
@@ -135,6 +615,118 @@
       "skill_stat": "Detonate"
     },
     {
+      "name": "Freedom to Proselytize",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "attr_stat": "Will",
+      "sec_stat": "Treatment Efficiency Boost",
+      "skill_stat": "Medicant"
+    },
+    {
+      "name": "OBJ Arts Identifier",
+      "type": "Arts Unit",
+      "rarity": 5,
+      "attr_stat": "Intellect",
+      "sec_stat": "Arts Intensity Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Cohesive Traction",
+      "type": "Polearm",
+      "rarity": 5,
+      "attr_stat": "Will",
+      "sec_stat": "Electric DMG Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Pathfinder's Beacon",
+      "type": "Polearm",
+      "rarity": 4,
+      "attr_stat": "Agility",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Inspiring"
+    },
+    {
+      "name": "Industry 0.1",
+      "type": "Greatsword",
+      "rarity": 4,
+      "attr_stat": "Strength",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Howling Guard",
+      "type": "Handcannon",
+      "rarity": 4,
+      "attr_stat": "Intellect",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Contingent Measure",
+      "type": "Sword",
+      "rarity": 4,
+      "attr_stat": "Agility",
+      "sec_stat": "Physical DMG Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Aggeloslayer",
+      "type": "Polearm",
+      "rarity": 4,
+      "attr_stat": "Will",
+      "sec_stat": "Arts DMG Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Long Road",
+      "type": "Handcannon",
+      "rarity": 4,
+      "attr_stat": "Strength",
+      "sec_stat": "Arts DMG Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Hypernova Auto",
+      "type": "Arts Unit",
+      "rarity": 4,
+      "attr_stat": "Intellect",
+      "sec_stat": "Arts DMG Boost",
+      "skill_stat": "Inspiring"
+    },
+    {
+      "name": "Wave Tide",
+      "type": "Sword",
+      "rarity": 4,
+      "attr_stat": "Intellect",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Pursuit"
+    },
+    {
+      "name": "Quencher",
+      "type": "Greatsword",
+      "rarity": 4,
+      "attr_stat": "Will",
+      "sec_stat": "HP Boost",
+      "skill_stat": "Crusher"
+    },
+    {
+      "name": "Fluorescent Roc",
+      "type": "Arts Unit",
+      "rarity": 4,
+      "attr_stat": "Will",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Tarr 11",
+      "type": "Sword",
+      "rarity": 3,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "None",
+      "skill_stat": "Assault"
+    },
+    {
       "name": "Jiminy 12",
       "type": "Arts Unit",
       "rarity": 3,
@@ -143,84 +735,108 @@
       "skill_stat": "Assault"
     },
     {
-      "name": "Valiant",
-      "type": "Sword",
-      "rarity": 5,
-      "attr_stat": "Strength",
-      "sec_stat": "Attack Boost",
-      "skill_stat": "Brutality"
-    },
-    {
-      "name": "Khravengger",
-      "type": "Greatsword",
-      "rarity": 5,
-      "attr_stat": "Strength",
-      "sec_stat": "Attack Boost",
-      "skill_stat": "Brutality"
-    },
-    {
-      "name": "Flickers in the Mist",
-      "type": "Sword",
-      "rarity": 4,
-      "attr_stat": "Agility",
-      "sec_stat": "Cryo DMG Boost",
-      "skill_stat": "Pursuit"
-    },
-    {
-      "name": "Glorious Memory",
+      "name": "Peco 5",
       "type": "Handcannon",
-      "rarity": 4,
-      "attr_stat": "Intellect",
-      "sec_stat": "Arts Intensity Boost",
-      "skill_stat": "Support"
+      "rarity": 3,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "None",
+      "skill_stat": "Assault"
     },
     {
-      "name": "Howling Guard",
+      "name": "Darhoff 7",
+      "type": "Greatsword",
+      "rarity": 3,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "None",
+      "skill_stat": "Assault"
+    },
+    {
+      "name": "Opero 77",
       "type": "Polearm",
-      "rarity": 5,
-      "attr_stat": "Will",
-      "sec_stat": "Defense Boost",
-      "skill_stat": "Subjugation"
+      "rarity": 3,
+      "attr_stat": "Main Attribute",
+      "sec_stat": "None",
+      "skill_stat": "Assault"
     },
     {
-      "name": "Navigator",
-      "type": "Sword",
-      "rarity": 4,
-      "attr_stat": "Will",
-      "sec_stat": "Ultimate Gain Boost",
-      "skill_stat": "Navigation"
-    },
-    {
-      "name": "Oblivion",
-      "type": "Arts Unit",
-      "rarity": 5,
-      "attr_stat": "Will",
-      "sec_stat": "Ultimate Gain Boost",
+      "name": "Brigand's Calling",
+      "type": "Handcannon",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Attack Boost",
       "skill_stat": "Detonate"
     },
     {
-      "name": "Rapid Ascent",
-      "type": "Handcannon",
-      "rarity": 4,
-      "attr_stat": "Agility",
-      "sec_stat": "Attack Boost",
-      "skill_stat": "Pursuit"
-    },
-    {
-      "name": "Sundered Prince",
+      "name": "Glorious Memory",
       "type": "Sword",
-      "rarity": 5,
-      "attr_stat": "Strength",
-      "sec_stat": "Attack Boost",
-      "skill_stat": "Brutality"
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Critical Rate Boost",
+      "skill_stat": "Twilight"
     },
     {
-      "name": "Sundering Steel",
-      "type": "Polearm",
+      "name": "Home Longing",
+      "type": "Handcannon",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Cryo DMG Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Lupine Scarlet",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Critical Rate Boost",
+      "skill_stat": "Fracture"
+    },
+    {
+      "name": "Lone Barge",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Flickers in the Mist",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Electric DMG Boost",
+      "skill_stat": "Efficacy"
+    },
+    {
+      "name": "Amaranthine Tassel",
+      "type": "Greatsword",
       "rarity": 6,
       "attr_stat": "Strength",
       "sec_stat": "Attack Boost",
-      "skill_stat": "Brutality"
+      "skill_stat": "Combative"
+    },
+    {
+      "name": "Blessing of Lustrous Carmine",
+      "type": "Polearm",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Heat DMG Boost",
+      "skill_stat": "Flow"
+    },
+    {
+      "name": "Phantom Pain",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Strength",
+      "sec_stat": "Arts Intensity Boost",
+      "skill_stat": "Suppression"
+    },
+    {
+      "name": "Beacon of Duty",
+      "type": "Polearm",
+      "rarity": 6,
+      "attr_stat": "Agility",
+      "sec_stat": "Ultimate Gain Boost",
+      "skill_stat": "Efficacy"
     }
   ],
   "attribute": [
@@ -266,19 +882,35 @@
   "ccs": [
     {
       "name": "CC: Infrastructure Collapse",
-      "tags": ["Hazard", "Defense", "Resource Drain"]
+      "tags": [
+        "Hazard",
+        "Defense",
+        "Resource Drain"
+      ]
     },
     {
       "name": "CC: Weapon Lockdown",
-      "tags": ["Weapon Restriction", "High Pressure", "Elite Waves"]
+      "tags": [
+        "Weapon Restriction",
+        "High Pressure",
+        "Elite Waves"
+      ]
     },
     {
       "name": "CC: Thermal Storm",
-      "tags": ["Element Shift", "Heat", "Boss Rush"]
+      "tags": [
+        "Element Shift",
+        "Heat",
+        "Boss Rush"
+      ]
     },
     {
       "name": "CC: Frigid Pursuit",
-      "tags": ["Cryo", "Mobility", "Sustain Check"]
+      "tags": [
+        "Cryo",
+        "Mobility",
+        "Sustain Check"
+      ]
     }
   ],
   "stages": {
@@ -315,6 +947,173 @@
         },
         "Tacit Maelstrom": {
           "lv": 80
+        }
+      },
+      "T-Creds": {
+        "Blessing of Tin": {
+          "lv": 10
+        },
+        "Blessing of Ferrium": {
+          "lv": 35
+        },
+        "Blessing of Cuprium": {
+          "lv": 55
+        },
+        "Blessing of Argenta": {
+          "lv": 70
+        },
+        "Blessing of Oros": {
+          "lv": 80
+        }
+      },
+      "Skill Up": {
+        "Shadow of the Tower": {
+          "lv": 10
+        },
+        "Speck of the Tower": {
+          "lv": 35
+        },
+        "Remorse of the Tower": {
+          "lv": 55
+        },
+        "Echoes of the Tower": {
+          "lv": 70
+        },
+        "Mirage of the Tower": {
+          "lv": 80
+        }
+      },
+      "Weapon EXP": {
+        "Gunsmith's Dig": {
+          "lv": 10
+        },
+        "Gunsmith's Reserve": {
+          "lv": 35
+        },
+        "Gunsmith's Hermitage": {
+          "lv": 55
+        },
+        "Gunsmith's Utopia": {
+          "lv": 70
+        },
+        "Gunsmith's Mound": {
+          "lv": 80
+        }
+      },
+      "Weapon Tune": {
+        "Forge Trials Lv.1": {
+          "lv": 10
+        },
+        "Forge Trials Lv.2": {
+          "lv": 35
+        },
+        "Forge Trials Lv.3": {
+          "lv": 55
+        },
+        "Forge Trials Lv.4": {
+          "lv": 70
+        },
+        "Forge Trials Lv.5": {
+          "lv": 80
+        }
+      }
+    },
+    "Crisis Drills": {
+      "Hazardous Material Collection Site": {
+        "Collection Site": {
+          "lv": 70
+        }
+      },
+      "Hazardous Material Landfill": {
+        "Landfill": {
+          "lv": 70
+        }
+      },
+      "Hazardous Material Management Room": {
+        "Management Room": {
+          "lv": 70
+        }
+      },
+      "Hazardous Material Institute": {
+        "Institute": {
+          "lv": 70
+        }
+      },
+      "Hazardous Material Containment Vault": {
+        "Containment Vault": {
+          "lv": 70
+        }
+      }
+    },
+    "RE-Crisis": {
+      "Rhodagn": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Triaggelos": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Marble Aggelomoirai": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Ruan Yi": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
+        }
+      },
+      "Nefarith": {
+        "Crisis Reflection": {
+          "lv": 40
+        },
+        "Crisis Extension": {
+          "lv": 60
+        },
+        "Crisis Calamity": {
+          "lv": 80
+        },
+        "Crisis Pandemonium": {
+          "lv": 90
         }
       }
     }

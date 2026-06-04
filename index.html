@@ -211,6 +211,8 @@
             const [characterWeaponTypeFilters, setCharacterWeaponTypeFilters] = useState(new Set());
             const [weaponCategoryFilters, setWeaponCategoryFilters] = useState(new Set());
 
+            const [stageSort, setStageSort] = useState('name');
+
             const [output, setOutput] = useState(null);
 
             useEffect(() => {
@@ -290,14 +292,31 @@
             const groupedStages = useMemo(() => {
                 const grouped = {};
                 (filteredStages || []).forEach((stage) => {
-                    const key = `${stage.zone} -> ${stage.category}`;
-                    if (!grouped[key]) grouped[key] = [];
-                    grouped[key].push(stage);
+                    const zoneKey = stage.zone;
+                    if (!grouped[zoneKey]) grouped[zoneKey] = {};
+                    const catKey = stage.category;
+                    if (!grouped[zoneKey][catKey]) grouped[zoneKey][catKey] = [];
+                    grouped[zoneKey][catKey].push(stage);
                 });
-                Object.keys(grouped).forEach((key) => {
-                    grouped[key].sort((a, b) => a.name.localeCompare(b.name));
+
+                Object.keys(grouped).forEach((zoneKey) => {
+                    Object.keys(grouped[zoneKey]).forEach((catKey) => {
+                        grouped[zoneKey][catKey].sort((a, b) => {
+                            if (a.lv !== b.lv) return a.lv - b.lv;
+                            return a.name.localeCompare(b.name);
+                        });
+                    });
                 });
-                return grouped;
+
+                const sortedGrouped = {};
+                Object.keys(grouped).sort().forEach(zoneKey => {
+                    sortedGrouped[zoneKey] = {};
+                    Object.keys(grouped[zoneKey]).sort().forEach(catKey => {
+                        sortedGrouped[zoneKey][catKey] = grouped[zoneKey][catKey];
+                    });
+                });
+
+                return sortedGrouped;
             }, [filteredStages]);
 
 
@@ -377,7 +396,7 @@
                         <div className="d-flex justify-content-between align-items-center mb-2">
                             <h3 className="m-0 fw-bold">Randomizer</h3>
                             <div className="d-flex gap-2">
-                                <button type="button" className="action-btn" onClick={runRandomizer}>RANDOMIZE</button>
+                                <button type="button" className="mini-btn" onClick={runRandomizer}>RANDOMIZE</button>
                             </div>
                         </div>
                     </header>
@@ -414,7 +433,7 @@
                                                 key={`out-weapon-${entry.weapon.name}-${idx}`}
                                                 selected={true}
                                                 image={`images/weapon_${normalizeName(entry.weapon.name)}.png`}
-                                                placeholderImage="images/placeholder_weapon.svg"
+                                                placeholderImage={`images/weaponcategory_${normalizeName(entry.weapon.type)}.png`}
                                                 title={entry.weapon.name}
                                                 tooltip={entry.weapon.name}
                                                 rarity={entry.weapon.rarity}
@@ -599,7 +618,7 @@
                                             selected={selectedWeapons.has(weapon.name)}
                                             onClick={() => setSelectedWeapons((prev) => toggleInSet(prev, weapon.name))}
                                             image={`images/weapon_${normalizeName(weapon.name)}.png`}
-                                            placeholderImage="images/placeholder_weapon.svg"
+                                            placeholderImage={`images/weaponcategory_${normalizeName(weapon.type)}.png`}
                                             title={weapon.name}
                                             tooltip={weapon.name}
                                             rarity={weapon.rarity}
@@ -690,25 +709,67 @@
                                         </button>
                                         <span className="count-text">Selected: {selectedStages.size}</span>
                                     </div>
-                                    {Object.entries(groupedStages).map(([header, items]) => (
-                                        <div key={header} className="stage-group-block">
-                                            <div className="stage-group-header">{header}</div>
-                                            <div className="tile-grid">
-                                                {items.map((stage) => (
-                                                    <SquareTile
-                                                        key={stage.id}
-                                                        selected={selectedStages.has(stage.id)}
-                                                        onClick={() => setSelectedStages((prev) => toggleInSet(prev, stage.id))}
-                                                        image={`images/stage_${normalizeName(`${stage.zone}_${stage.category}`)}.png`}
-                                                        placeholderImage="images/placeholder_stage.svg"
-                                                        title={stage.name}
-                                                        tooltip={stage.name}
-                                                        badge={`Lv ${stage.lv}`}
-                                                    />
+                                    {Object.entries(groupedStages).map(([zoneName, categories]) => {
+                                        const allZoneItems = Object.values(categories).flat();
+                                        return (
+                                            <div key={zoneName} className="stage-group-block">
+                                                <button
+                                                    type="button"
+                                                    className="mini-btn mb-9"
+                                                    onClick={() => {
+                                                        setSelectedStages(prev => {
+                                                            const next = new Set(prev);
+                                                            const allSelected = allZoneItems.every(item => next.has(item.id));
+                                                            if (allSelected) {
+                                                                allZoneItems.forEach(item => next.delete(item.id));
+                                                            } else {
+                                                                allZoneItems.forEach(item => next.add(item.id));
+                                                            }
+                                                            return next;
+                                                        });
+                                                    }}
+                                                >
+                                                    {zoneName}
+                                                </button>
+                                                {Object.entries(categories).map(([categoryName, items]) => (
+                                                    <div key={categoryName} className="stage-group-block" style={{ marginLeft: '1rem' }}>
+                                                        <button
+                                                            type="button"
+                                                            className="mini-btn mb-9"
+                                                            onClick={() => {
+                                                                setSelectedStages(prev => {
+                                                                    const next = new Set(prev);
+                                                                    const allSelected = items.every(item => next.has(item.id));
+                                                                    if (allSelected) {
+                                                                        items.forEach(item => next.delete(item.id));
+                                                                    } else {
+                                                                        items.forEach(item => next.add(item.id));
+                                                                    }
+                                                                    return next;
+                                                                });
+                                                            }}
+                                                        >
+                                                            {categoryName}
+                                                        </button>
+                                                        <div className="tile-grid" style={{ marginLeft: '1rem' }}>
+                                                            {items.map((stage) => (
+                                                                <SquareTile
+                                                                    key={stage.id}
+                                                                    selected={selectedStages.has(stage.id)}
+                                                                    onClick={() => setSelectedStages((prev) => toggleInSet(prev, stage.id))}
+                                                                    image={`images/stage_${normalizeName(`${stage.zone}_${stage.category}`)}.png`}
+                                                                    placeholderImage="images/placeholder_stage.svg"
+                                                                    title={stage.name}
+                                                                    tooltip={stage.name}
+                                                                    badge={`Lv ${stage.lv}`}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 ))}
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </AccordionSection>
                             )}
 
