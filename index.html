@@ -1,445 +1,446 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Endfield Randomizer</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Endfield Randomizer</title>
 
-    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
-    <link rel="icon" type="image/png" href="images/favicon.ico">
+	<link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+	<link rel="icon" type="image/png" href="images/favicon.ico">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+	<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <link rel="stylesheet" href="style.css"/>
+	<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div id="root"></div>
+<div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+<script type="text/babel">
+    const {useState, useEffect, useMemo} = React;
 
-        const normalizeName = (name) =>
-            name
-                .toLowerCase()
-                .replace(/\s+/g, '_')
-                .replace(/:/g, '')
-                .replace(/'/g, '')
-                .replace(/,/g, '');
+    const normalizeName = (name) =>
+        name
+            .toLowerCase()
+            .replace(/\s+/g, '_')
+            .replace(/:/g, '')
+            .replace(/'/g, '')
+            .replace(/,/g, '');
 
-        const getRandomItem = (list) => list[Math.floor(Math.random() * list.length)];
+    const getRandomItem = (list) => list[Math.floor(Math.random() * list.length)];
 
-        const shuffle = (list) => {
-            const copy = [...list];
-            for (let i = copy.length - 1; i > 0; i -= 1) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [copy[i], copy[j]] = [copy[j], copy[i]];
-            }
-            return copy;
-        };
+    const shuffle = (list) => {
+        const copy = [...list];
+        for (let i = copy.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        return copy;
+    };
 
-        const pickUnique = (list, count) => shuffle(list).slice(0, count);
+    const pickUnique = (list, count) => shuffle(list).slice(0, count);
 
-        const flattenStages = (stagesObj) => {
-            const result = [];
-            Object.entries(stagesObj || {}).forEach(([zoneName, zoneData]) => {
-                Object.entries(zoneData || {}).forEach(([categoryName, categoryData]) => {
-                    Object.entries(categoryData || {}).forEach(([stageName, stageData]) => {
-                        result.push({
-                            id: `${zoneName}::${categoryName}::${stageName}`,
-                            zone: zoneName,
-                            category: categoryName,
-                            name: stageName,
-                            lv: stageData.lv
-                        });
+    const flattenStages = (stagesObj) => {
+        const result = [];
+        Object.entries(stagesObj || {}).forEach(([zoneName, zoneData]) => {
+            Object.entries(zoneData || {}).forEach(([categoryName, categoryData]) => {
+                Object.entries(categoryData || {}).forEach(([stageName, stageData]) => {
+                    result.push({
+                        id: `${zoneName}::${categoryName}::${stageName}`,
+                        zone: zoneName,
+                        category: categoryName,
+                        name: stageName,
+                        lv: stageData.lv
                     });
                 });
             });
-            return result;
-        };
+        });
+        return result;
+    };
 
-        const assignWeaponsToCharacters = (characters, weapons, weaponCountMap) => {
-            const usedCounts = { ...weaponCountMap };
-            const byType = {};
-            weapons.forEach((weapon) => {
-                if (!byType[weapon.type]) byType[weapon.type] = [];
-                byType[weapon.type].push(weapon);
-            });
+    const assignWeaponsToCharacters = (characters, weapons, weaponCountMap) => {
+        const usedCounts = {...weaponCountMap};
+        const byType = {};
+        weapons.forEach((weapon) => {
+            if (!byType[weapon.type]) byType[weapon.type] = [];
+            byType[weapon.type].push(weapon);
+        });
 
-            const optionsByCharacter = {};
-            characters.forEach((character) => {
-                optionsByCharacter[character.name] = (byType[character.type] || []).filter(
-                    (weapon) => (usedCounts[weapon.name] || 0) > 0
-                );
-            });
+        const optionsByCharacter = {};
+        characters.forEach((character) => {
+            optionsByCharacter[character.name] = (byType[character.type] || []).filter(
+                (weapon) => (usedCounts[weapon.name] || 0) > 0
+            );
+        });
 
-            const order = [...characters].sort(
-                (a, b) => optionsByCharacter[a.name].length - optionsByCharacter[b.name].length
+        const order = [...characters].sort(
+            (a, b) => optionsByCharacter[a.name].length - optionsByCharacter[b.name].length
+        );
+
+        const assignment = {};
+        const walk = (idx) => {
+            if (idx >= order.length) return true;
+            const character = order[idx];
+            const options = shuffle(optionsByCharacter[character.name]).filter(
+                (weapon) => (usedCounts[weapon.name] || 0) > 0
             );
 
-            const assignment = {};
-            const walk = (idx) => {
-                if (idx >= order.length) return true;
-                const character = order[idx];
-                const options = shuffle(optionsByCharacter[character.name]).filter(
-                    (weapon) => (usedCounts[weapon.name] || 0) > 0
-                );
-
-                for (const weapon of options) {
-                    usedCounts[weapon.name] -= 1;
-                    assignment[character.name] = weapon;
-                    if (walk(idx + 1)) return true;
-                    usedCounts[weapon.name] += 1;
-                    delete assignment[character.name];
-                }
-                return false;
-            };
-
-            return walk(0) ? assignment : null;
+            for (const weapon of options) {
+                usedCounts[weapon.name] -= 1;
+                assignment[character.name] = weapon;
+                if (walk(idx + 1)) return true;
+                usedCounts[weapon.name] += 1;
+                delete assignment[character.name];
+            }
+            return false;
         };
 
-        const toggleInSet = (set, key) => {
-            const next = new Set(set);
-            if (next.has(key)) next.delete(key);
-            else next.add(key);
-            return next;
-        };
+        return walk(0) ? assignment : null;
+    };
 
-        const AccordionSection = ({ title, titleExtra = null, defaultOpen = true, children }) => {
-            const [open, setOpen] = useState(defaultOpen);
-            return (
-                <div className="panel-card">
-                    <button type="button" className="panel-header" onClick={() => setOpen((prev) => !prev)}>
-                        <div className="panel-header-title-wrap">
-                            <span>{title}</span>
-                            {titleExtra}
+    const toggleInSet = (set, key) => {
+        const next = new Set(set);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return next;
+    };
+
+    const AccordionSection = ({title, titleExtra = null, defaultOpen = true, children}) => {
+        const [open, setOpen] = useState(defaultOpen);
+        return (
+            <div className="panel-card">
+                <button type="button" className="panel-header" onClick={() => setOpen((prev) => !prev)}>
+                    <div className="panel-header-title-wrap">
+                        <span>{title}</span>
+                        {titleExtra}
+                    </div>
+                    <span className="panel-caret">{open ? '-' : '+'}</span>
+                </button>
+                {open && <div className="panel-body">{children}</div>}
+            </div>
+        );
+    };
+
+    const ChipFilterGroup = ({title, options, selectedSet, onToggle, onSelectAll, onClear}) => {
+        const [open, setOpen] = useState(false);
+        return (
+            <div className="filter-group-card">
+                <button type="button" className="filter-group-header" onClick={() => setOpen((prev) => !prev)}>
+                    <span className="chip-group-title m-0">{title}</span>
+                    <span className="panel-caret">{open ? '-' : '+'}</span>
+                </button>
+                {open && (
+                    <div className="filter-group-body">
+                        <div className="chip-tools">
+                            <button type="button" className="mini-btn" aria-label={`${title} select all`}
+                                    onClick={onSelectAll}>All
+                            </button>
+                            <button type="button" className="mini-btn" aria-label={`${title} clear all`}
+                                    onClick={onClear}>None
+                            </button>
                         </div>
-                        <span className="panel-caret">{open ? '-' : '+'}</span>
-                    </button>
-                    {open && <div className="panel-body">{children}</div>}
-                </div>
-            );
-        };
+                        <div className="chips-row">
+                            {options.map((item) => (
+                                <button
+                                    type="button"
+                                    key={`${title}-${item}`}
+                                    className={`filter-chip ${selectedSet.has(item) ? 'filter-chip-active' : ''}`}
+                                    aria-label={`${title} filter ${item}`}
+                                    onClick={() => onToggle(item)}
+                                >
+                                    {item}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
-        const ChipFilterGroup = ({ title, options, selectedSet, onToggle, onSelectAll, onClear }) => {
-            const [open, setOpen] = useState(false);
-            return (
-                <div className="filter-group-card">
-                    <button type="button" className="filter-group-header" onClick={() => setOpen((prev) => !prev)}>
-                        <span className="chip-group-title m-0">{title}</span>
-                        <span className="panel-caret">{open ? '-' : '+'}</span>
-                    </button>
-                    {open && (
-                        <div className="filter-group-body">
-                            <div className="chip-tools">
-                                <button type="button" className="mini-btn" aria-label={`${title} select all`} onClick={onSelectAll}>All</button>
-                                <button type="button" className="mini-btn" aria-label={`${title} clear all`} onClick={onClear}>None</button>
-                            </div>
-                            <div className="chips-row">
-                                {options.map((item) => (
-                                    <button
-                                        type="button"
-                                        key={`${title}-${item}`}
-                                        className={`filter-chip ${selectedSet.has(item) ? 'filter-chip-active' : ''}`}
-                                        aria-label={`${title} filter ${item}`}
-                                        onClick={() => onToggle(item)}
-                                    >
-                                        {item}
-                                    </button>
+    const sortByRarityThenName = (a, b) => {
+        const rarityA = typeof a.rarity === 'number' ? a.rarity : -1;
+        const rarityB = typeof b.rarity === 'number' ? b.rarity : -1;
+        if (rarityA !== rarityB) return rarityB - rarityA;
+        return a.name.localeCompare(b.name);
+    };
+
+    const SquareTile = ({
+                            selected,
+                            onClick,
+                            image,
+                            placeholderImage,
+                            title,
+                            subtitle,
+                            tooltip,
+                            badge,
+                            rarity,
+                            useImageRarityBg = false,
+                            showText = false,
+                            children
+                        }) => (
+        <button
+            type="button"
+            className={`square-tile ${selected ? 'square-tile-selected' : ''}`}
+            onClick={onClick}
+            title={tooltip || title}
+            aria-label={tooltip || title}
+        >
+            <div className={`tile-accent accent-${rarity}`}></div>
+            <div
+                className={`square-image-wrap ${useImageRarityBg && typeof rarity === 'number' ? `img-bg-${rarity}` : ''}`}>
+                {badge && <div className="tile-badge">{badge}</div>}
+                <img
+                    src={image}
+                    className="square-image"
+                    alt={title}
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = placeholderImage;
+                    }}
+                />
+            </div>
+            {showText && <div className="square-title">{title}</div>}
+            {showText && subtitle && <div className="square-subtitle">{subtitle}</div>}
+            {children}
+        </button>
+    );
+
+    function RandomizerOutputModal({output, onClose, onRandomize, onToggleCharacter, onToggleWeapon, onToggleStage}) {
+        if (!output) return null;
+
+        return (
+            <div className="custom-modal-overlay" onClick={onClose}>
+                <div className="custom-modal" style={{maxWidth: '900px'}} onClick={e => e.stopPropagation()}>
+                    <h4 className="mb-3">Randomizer Output</h4>
+                    <div className="muted-note mb-3">Click on an item to de-select it for the next randomization.</div>
+                    <div className="output-grid">
+                        {output.error && <div className="error-text">{output.error}</div>}
+
+                        <div className="output-group">
+                            <div className="output-label">Characters</div>
+                            <div className="tile-grid output-tile-grid">
+                                {output.team.map((character, idx) => (
+                                    <SquareTile
+                                        key={`out-char-${character.name}-${idx}`}
+                                        selected={output.selectedCharacters.has(character.name)}
+                                        onClick={() => onToggleCharacter(character.name)}
+                                        image={`images/character_${normalizeName(character.name)}.png`}
+                                        placeholderImage="images/placeholder_character.svg"
+                                        title={character.name}
+                                        tooltip={character.name}
+                                        rarity={character.rarity}
+                                        useImageRarityBg={true}
+                                    />
                                 ))}
                             </div>
                         </div>
-                    )}
-                </div>
-            );
-        };
 
-        const sortByRarityThenName = (a, b) => {
-            const rarityA = typeof a.rarity === 'number' ? a.rarity : -1;
-            const rarityB = typeof b.rarity === 'number' ? b.rarity : -1;
-            if (rarityA !== rarityB) return rarityB - rarityA;
-            return a.name.localeCompare(b.name);
-        };
-
-        const SquareTile = ({ selected, onClick, image, placeholderImage, title, subtitle, tooltip, badge, rarity, useImageRarityBg = false, showText = false, children }) => (
-            <button
-                type="button"
-                className={`square-tile ${selected ? 'square-tile-selected' : ''}`}
-                onClick={onClick}
-                title={tooltip || title}
-                aria-label={tooltip || title}
-            >
-                <div className={`tile-accent accent-${rarity}`}></div>
-                <div className={`square-image-wrap ${useImageRarityBg && typeof rarity === 'number' ? `img-bg-${rarity}` : ''}`}>
-                    {badge && <div className="tile-badge">{badge}</div>}
-                    <img
-                        src={image}
-                        className="square-image"
-                        alt={title}
-                        onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = placeholderImage;
-                        }}
-                    />
-                </div>
-                {showText && <div className="square-title">{title}</div>}
-                {showText && subtitle && <div className="square-subtitle">{subtitle}</div>}
-                {children}
-            </button>
-        );
-
-        function RandomizerOutputModal({ output, onClose, onRandomize, onToggleCharacter, onToggleWeapon, onToggleStage }) {
-            if (!output) return null;
-
-            return (
-                <div className="custom-modal-overlay" onClick={onClose}>
-                    <div className="custom-modal" style={{maxWidth: '900px'}} onClick={e => e.stopPropagation()}>
-                        <h4 className="mb-3">Randomizer Output</h4>
-                        <div className="muted-note mb-3">Click on an item to de-select it for the next randomization.</div>
-                        <div className="output-grid">
-                            {output.error && <div className="error-text">{output.error}</div>}
-
-                            <div className="output-group">
-                                <div className="output-label">Characters</div>
-                                <div className="tile-grid output-tile-grid">
-                                    {output.team.map((character, idx) => (
-                                        <SquareTile
-                                            key={`out-char-${character.name}-${idx}`}
-                                            selected={output.selectedCharacters.has(character.name)}
-                                            onClick={() => onToggleCharacter(character.name)}
-                                            image={`images/character_${normalizeName(character.name)}.png`}
-                                            placeholderImage="images/placeholder_character.svg"
-                                            title={character.name}
-                                            tooltip={character.name}
-                                            rarity={character.rarity}
-                                            useImageRarityBg={true}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="output-group">
-                                <div className="output-label">Weapons</div>
-                                <div className="tile-grid output-tile-grid">
-                                    {output.weapons.map((entry, idx) => (
-                                        <SquareTile
-                                            key={`out-weapon-${entry.weapon.name}-${idx}`}
-                                            selected={output.selectedWeapons.has(entry.weapon.name)}
-                                            onClick={() => onToggleWeapon(entry.weapon.name)}
-                                            image={`images/weapon_${normalizeName(entry.weapon.name)}.png`}
-                                            placeholderImage={`images/weaponcategory_${normalizeName(entry.weapon.type)}.png`}
-                                            title={entry.weapon.name}
-                                            tooltip={entry.weapon.name}
-                                            rarity={entry.weapon.rarity}
-                                            useImageRarityBg={true}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="output-group">
-                                <div className="output-label">{output.mode === 'stage' ? 'Stage' : 'CC'}</div>
-                                {output.mode === 'stage' && output.stageOrCc && (
-                                    <div className="tile-grid output-tile-grid">
-                                        <SquareTile
-                                            selected={output.selectedStages.has(output.stageOrCc.id)}
-                                            onClick={() => onToggleStage(output.stageOrCc.id)}
-                                            image={`images/stage_${normalizeName(`${output.stageOrCc.zone}_${output.stageOrCc.category}`)}.png`}
-                                            placeholderImage="images/placeholder_stage.svg"
-                                            title={output.stageOrCc.name}
-                                            tooltip={output.stageOrCc.name}
-                                            badge={`Lv ${output.stageOrCc.lv}`}
-                                        />
-                                    </div>
-                                )}
-                                {output.mode === 'cc' && output.stageOrCc && (
-                                    <div className="cc-placeholder-wrap">
-                                        <span className="chip chip-stage">{output.stageOrCc.name}</span>
-                                        <div className="muted-note">CC tags/options randomization not implemented yet.</div>
-                                    </div>
-                                )}
+                        <div className="output-group">
+                            <div className="output-label">Weapons</div>
+                            <div className="tile-grid output-tile-grid">
+                                {output.weapons.map((entry, idx) => (
+                                    <SquareTile
+                                        key={`out-weapon-${entry.weapon.name}-${idx}`}
+                                        selected={output.selectedWeapons.has(entry.weapon.name)}
+                                        onClick={() => onToggleWeapon(entry.weapon.name)}
+                                        image={`images/weapon_${normalizeName(entry.weapon.name)}.png`}
+                                        placeholderImage={`images/weaponcategory_${normalizeName(entry.weapon.type)}.png`}
+                                        title={entry.weapon.name}
+                                        tooltip={entry.weapon.name}
+                                        rarity={entry.weapon.rarity}
+                                        useImageRarityBg={true}
+                                    />
+                                ))}
                             </div>
                         </div>
-                        <div className="modal-buttons">
-                            <button className="modal-btn btn-confirm" onClick={onRandomize}>RANDOMIZE AGAIN</button>
-                            <button className="modal-btn btn-cancel" onClick={onClose}>CLOSE</button>
+
+                        <div className="output-group">
+                            <div className="output-label">{output.mode === 'stage' ? 'Stage' : 'CC'}</div>
+                            {output.mode === 'stage' && output.stageOrCc && (
+                                <div className="tile-grid output-tile-grid">
+                                    <SquareTile
+                                        selected={output.selectedStages.has(output.stageOrCc.id)}
+                                        onClick={() => onToggleStage(output.stageOrCc.id)}
+                                        image={`images/stage_${normalizeName(`${output.stageOrCc.zone}_${output.stageOrCc.category}`)}.png`}
+                                        placeholderImage="images/placeholder_stage.svg"
+                                        title={output.stageOrCc.name}
+                                        tooltip={output.stageOrCc.name}
+                                        badge={`Lv ${output.stageOrCc.lv}`}
+                                    />
+                                </div>
+                            )}
+                            {output.mode === 'cc' && output.stageOrCc && (
+                                <div className="cc-placeholder-wrap">
+                                    <span className="chip chip-stage">{output.stageOrCc.name}</span>
+                                    <div className="muted-note">CC tags/options randomization not implemented yet.</div>
+                                </div>
+                            )}
                         </div>
                     </div>
+                    <div className="modal-buttons">
+                        <button className="modal-btn btn-confirm" onClick={onRandomize}>RANDOMIZE AGAIN</button>
+                        <button className="modal-btn btn-cancel" onClick={onClose}>CLOSE</button>
+                    </div>
                 </div>
-            );
-        }
+            </div>
+        );
+    }
 
-        function App() {
-            const [data, setData] = useState(null);
-            const [error, setError] = useState('');
-            const [stageOrCcMode, setStageOrCcMode] = useState('stage');
+    function App() {
+        const [data, setData] = useState(null);
+        const [error, setError] = useState('');
+        const [stageOrCcMode, setStageOrCcMode] = useState('stage');
 
-            const [showImportExportModal, setShowImportExportModal] = useState(false);
-            const [importExportMode, setImportExportMode] = useState('export');
-            const [importExportText, setImportExportText] = useState('');
-            const [importExportError, setImportExportError] = useState('');
+        const [showImportExportModal, setShowImportExportModal] = useState(false);
+        const [importExportMode, setImportExportMode] = useState('export');
+        const [importExportText, setImportExportText] = useState('');
+        const [importExportError, setImportExportError] = useState('');
 
-            const [selectedCharacters, setSelectedCharacters] = useState(new Set());
-            const [selectedWeapons, setSelectedWeapons] = useState(new Set());
-            const [selectedStages, setSelectedStages] = useState(new Set());
-            const [selectedCcs, setSelectedCcs] = useState(new Set());
+        const [selectedCharacters, setSelectedCharacters] = useState(new Set());
+        const [selectedWeapons, setSelectedWeapons] = useState(new Set());
+        const [selectedStages, setSelectedStages] = useState(new Set());
+        const [selectedCcs, setSelectedCcs] = useState(new Set());
 
-            const [weaponCounts, setWeaponCounts] = useState({});
+        const [weaponCounts, setWeaponCounts] = useState({});
 
-            const [characterSearch, setCharacterSearch] = useState('');
-            const [weaponSearch, setWeaponSearch] = useState('');
-            const [stageSearch, setStageSearch] = useState('');
-            const [ccSearch, setCcSearch] = useState('');
+        const [characterSearch, setCharacterSearch] = useState('');
+        const [weaponSearch, setWeaponSearch] = useState('');
+        const [stageSearch, setStageSearch] = useState('');
+        const [ccSearch, setCcSearch] = useState('');
 
-            const [characterClassFilters, setCharacterClassFilters] = useState(new Set());
-            const [characterElementFilters, setCharacterElementFilters] = useState(new Set());
-            const [characterFactionFilters, setCharacterFactionFilters] = useState(new Set());
-            const [characterWeaponTypeFilters, setCharacterWeaponTypeFilters] = useState(new Set());
-            const [characterRarityFilters, setCharacterRarityFilters] = useState(new Set());
-            const [weaponCategoryFilters, setWeaponCategoryFilters] = useState(new Set());
-            const [weaponRarityFilters, setWeaponRarityFilters] = useState(new Set());
+        const [characterClassFilters, setCharacterClassFilters] = useState(new Set());
+        const [characterElementFilters, setCharacterElementFilters] = useState(new Set());
+        const [characterFactionFilters, setCharacterFactionFilters] = useState(new Set());
+        const [characterWeaponTypeFilters, setCharacterWeaponTypeFilters] = useState(new Set());
+        const [characterRarityFilters, setCharacterRarityFilters] = useState(new Set());
+        const [weaponCategoryFilters, setWeaponCategoryFilters] = useState(new Set());
+        const [weaponRarityFilters, setWeaponRarityFilters] = useState(new Set());
 
-            const [output, setOutput] = useState(null);
-            const [showOutputModal, setShowOutputModal] = useState(false);
+        const [output, setOutput] = useState(null);
+        const [showOutputModal, setShowOutputModal] = useState(false);
 
-            const SETTINGS_KEY = 'endfield_randomizer_settings_v1';
+        const SETTINGS_KEY = 'endfield_randomizer_settings_v1';
 
-            useEffect(() => {
-                const savedSettings = localStorage.getItem(SETTINGS_KEY);
-                if (savedSettings) {
-                    try {
-                        const parsed = JSON.parse(savedSettings);
-                        if (parsed) {
-                            if (parsed.selectedCharacters) setSelectedCharacters(new Set(parsed.selectedCharacters));
-                            if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
-                            if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
-                            if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
-                            if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
-                        }
-                    } catch (e) {
-                        console.error("Failed to parse randomizer settings from localStorage", e);
+        useEffect(() => {
+            const savedSettings = localStorage.getItem(SETTINGS_KEY);
+            if (savedSettings) {
+                try {
+                    const parsed = JSON.parse(savedSettings);
+                    if (parsed) {
+                        if (parsed.selectedCharacters) setSelectedCharacters(new Set(parsed.selectedCharacters));
+                        if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
+                        if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
+                        if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
+                        if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
                     }
+                } catch (e) {
+                    console.error("Failed to parse randomizer settings from localStorage", e);
                 }
-            }, []);
+            }
+        }, []);
 
-            useEffect(() => {
-                if (!data) return; // Don't save until data is loaded
-                const settings = {
-                    selectedCharacters: [...selectedCharacters],
-                    selectedWeapons: [...selectedWeapons],
-                    weaponCounts,
-                    selectedStages: [...selectedStages],
-                    selectedCcs: [...selectedCcs],
-                };
-                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-            }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcs, data]);
+        useEffect(() => {
+            if (!data) return; // Don't save until data is loaded
+            const settings = {
+                selectedCharacters: [...selectedCharacters],
+                selectedWeapons: [...selectedWeapons],
+                weaponCounts,
+                selectedStages: [...selectedStages],
+                selectedCcs: [...selectedCcs],
+            };
+            localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcs, data]);
 
-            useEffect(() => {
-                fetch('data.json')
-                    .then((res) => {
-                        if (!res.ok) throw new Error('Cannot load data.json');
-                        return res.json();
-                    })
-                    .then((json) => {
-                        const stagesFlat = flattenStages(json.stages);
+        useEffect(() => {
+            fetch('data.json')
+                .then((res) => {
+                    if (!res.ok) throw new Error('Cannot load data.json');
+                    return res.json();
+                })
+                .then((json) => {
+                    const stagesFlat = flattenStages(json.stages);
 
-                        const characterRarities = [...new Set(json.characters.map(c => c.rarity))].sort((a, b) => a - b);
-                        const weaponRarities = [...new Set(json.weapons.map(w => w.rarity))].sort((a, b) => a - b);
+                    const characterRarities = [...new Set(json.characters.map(c => c.rarity))].sort((a, b) => a - b);
+                    const weaponRarities = [...new Set(json.weapons.map(w => w.rarity))].sort((a, b) => a - b);
 
-                        const withStageFlat = { ...json, stagesFlat, weaponRarities, characterRarities };
-                        setData(withStageFlat);
+                    const withStageFlat = {...json, stagesFlat, weaponRarities, characterRarities};
+                    setData(withStageFlat);
 
-                        const savedSettings = localStorage.getItem(SETTINGS_KEY);
-                        if (savedSettings) {
-                            // Settings are loaded in another useEffect
-                        } else {
-                            // Only set defaults if no saved settings
-                            setSelectedCharacters(new Set(json.characters.map((c) => c.name)));
-                            setSelectedWeapons(new Set(json.weapons.map((w) => w.name)));
-                            setSelectedStages(new Set(stagesFlat.map((s) => s.id)));
-                            setSelectedCcs(new Set((json.ccs || []).map((cc) => cc.name)));
-
-                            const initialWeaponCounts = {};
-                            json.weapons.forEach((weapon) => {
-                                initialWeaponCounts[weapon.name] = 1;
-                            });
-                            setWeaponCounts(prev => ({...initialWeaponCounts, ...prev}));
-                        }
-
-                        setCharacterClassFilters(new Set([]));
-                        setCharacterElementFilters(new Set([]));
-                        setCharacterFactionFilters(new Set([]));
-                        setCharacterWeaponTypeFilters(new Set([]));
-                        setCharacterRarityFilters(new Set([]));
-                        setWeaponCategoryFilters(new Set([]));
-                        setWeaponRarityFilters(new Set([]));
+                    const savedSettings = localStorage.getItem(SETTINGS_KEY);
+                    if (savedSettings) {
+                        // Settings are loaded in another useEffect
+                    } else {
+                        // Only set defaults if no saved settings
+                        setSelectedCharacters(new Set(json.characters.map((c) => c.name)));
+                        setSelectedWeapons(new Set(json.weapons.map((w) => w.name)));
+                        setSelectedStages(new Set(stagesFlat.map((s) => s.id)));
+                        setSelectedCcs(new Set((json.ccs || []).map((cc) => cc.name)));
 
                         const initialWeaponCounts = {};
                         json.weapons.forEach((weapon) => {
                             initialWeaponCounts[weapon.name] = 1;
                         });
                         setWeaponCounts(prev => ({...initialWeaponCounts, ...prev}));
-                    })
-                    .catch((err) => setError(err.message || 'Failed to load data'));
-            }, []);
-
-            // Back button handling
-            useEffect(() => {
-                const handlePopState = (e) => {
-                    if (showImportExportModal) {
-                        setShowImportExportModal(false);
-                        setImportExportError('');
                     }
-                };
-                window.addEventListener('popstate', handlePopState);
-                return () => window.removeEventListener('popstate', handlePopState);
-            }, [showImportExportModal]);
 
-            useEffect(() => {
-                if (showImportExportModal) {
-                    if (!window.history.state?.modal) {
-                        window.history.pushState({ modal: true }, '');
-                    }
-                }
-            }, [showImportExportModal]);
+                    setCharacterClassFilters(new Set([]));
+                    setCharacterElementFilters(new Set([]));
+                    setCharacterFactionFilters(new Set([]));
+                    setCharacterWeaponTypeFilters(new Set([]));
+                    setCharacterRarityFilters(new Set([]));
+                    setWeaponCategoryFilters(new Set([]));
+                    setWeaponRarityFilters(new Set([]));
 
-            const closeModals = () => {
+                    const initialWeaponCounts = {};
+                    json.weapons.forEach((weapon) => {
+                        initialWeaponCounts[weapon.name] = 1;
+                    });
+                    setWeaponCounts(prev => ({...initialWeaponCounts, ...prev}));
+                })
+                .catch((err) => setError(err.message || 'Failed to load data'));
+        }, []);
+
+        // Back button handling
+        useEffect(() => {
+            const handlePopState = (e) => {
                 if (showImportExportModal) {
                     setShowImportExportModal(false);
                     setImportExportError('');
-                    if (window.history.state?.modal) {
-                        window.history.back();
-                    }
-                }
-                if (showOutputModal) {
-                    setShowOutputModal(false);
                 }
             };
+            window.addEventListener('popstate', handlePopState);
+            return () => window.removeEventListener('popstate', handlePopState);
+        }, [showImportExportModal]);
 
-            const openImportExportModal = (mode) => {
-                setImportExportMode(mode);
-                setImportExportError('');
-                if (mode === 'export') {
-                    const settings = {
-                        selectedCharacters: [...selectedCharacters],
-                        selectedWeapons: [...selectedWeapons],
-                        weaponCounts,
-                        selectedStages: [...selectedStages],
-                        selectedCcs: [...selectedCcs],
-                    };
-                    setImportExportText(JSON.stringify(settings, null, 2));
-                } else {
-                    setImportExportText('');
+        useEffect(() => {
+            if (showImportExportModal) {
+                if (!window.history.state?.modal) {
+                    window.history.pushState({modal: true}, '');
                 }
-                setShowImportExportModal(true);
-            };
+            }
+        }, [showImportExportModal]);
 
-            const handleExportSettings = () => {
-                setImportExportMode('export');
+        const closeModals = () => {
+            if (showImportExportModal) {
+                setShowImportExportModal(false);
                 setImportExportError('');
+                if (window.history.state?.modal) {
+                    window.history.back();
+                }
+            }
+            if (showOutputModal) {
+                setShowOutputModal(false);
+            }
+        };
+
+        const openImportExportModal = (mode) => {
+            setImportExportMode(mode);
+            setImportExportError('');
+            if (mode === 'export') {
                 const settings = {
                     selectedCharacters: [...selectedCharacters],
                     selectedWeapons: [...selectedWeapons],
@@ -448,692 +449,762 @@
                     selectedCcs: [...selectedCcs],
                 };
                 setImportExportText(JSON.stringify(settings, null, 2));
+            } else {
+                setImportExportText('');
+            }
+            setShowImportExportModal(true);
+        };
+
+        const handleExportSettings = () => {
+            setImportExportMode('export');
+            setImportExportError('');
+            const settings = {
+                selectedCharacters: [...selectedCharacters],
+                selectedWeapons: [...selectedWeapons],
+                weaponCounts,
+                selectedStages: [...selectedStages],
+                selectedCcs: [...selectedCcs],
             };
+            setImportExportText(JSON.stringify(settings, null, 2));
+        };
 
-            const handleImportSettings = () => {
-                if (!data) return;
+        const handleImportSettings = () => {
+            if (!data) return;
 
-                let parsed;
-                try {
-                    parsed = JSON.parse(importExportText);
-                } catch (err) {
-                    setImportExportError('Invalid JSON. Please paste a valid JSON object.');
-                    return;
-                }
+            let parsed;
+            try {
+                parsed = JSON.parse(importExportText);
+            } catch (err) {
+                setImportExportError('Invalid JSON. Please paste a valid JSON object.');
+                return;
+            }
 
-                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-                    setImportExportError('JSON must be an object.');
-                    return;
-                }
+            if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                setImportExportError('JSON must be an object.');
+                return;
+            }
 
-                // Basic validation for expected keys
-                const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs'];
-                const hasSomeExpectedKey = expectedKeys.some(key => key in parsed);
-                if (!hasSomeExpectedKey) {
-                    setImportExportError('Imported JSON does not contain any valid settings keys.');
-                    return;
-                }
+            // Basic validation for expected keys
+            const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs'];
+            const hasSomeExpectedKey = expectedKeys.some(key => key in parsed);
+            if (!hasSomeExpectedKey) {
+                setImportExportError('Imported JSON does not contain any valid settings keys.');
+                return;
+            }
 
-                if (parsed.selectedCharacters) setSelectedCharacters(new Set(parsed.selectedCharacters));
-                if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
-                if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
-                if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
-                if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
+            if (parsed.selectedCharacters) setSelectedCharacters(new Set(parsed.selectedCharacters));
+            if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
+            if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
+            if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
+            if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
 
-                closeModals();
-            };
+            closeModals();
+        };
 
-            useEffect(() => {
-                if (!data) return;
-                if (stageOrCcMode === 'stage') {
-                    setSelectedStages((prev) => (prev.size > 0 ? prev : new Set(data.stagesFlat.map((stage) => stage.id))));
-                } else {
-                    setSelectedCcs((prev) => (prev.size > 0 ? prev : new Set((data.ccs || []).map((cc) => cc.name))));
-                }
-            }, [stageOrCcMode, data]);
+        useEffect(() => {
+            if (!data) return;
+            if (stageOrCcMode === 'stage') {
+                setSelectedStages((prev) => (prev.size > 0 ? prev : new Set(data.stagesFlat.map((stage) => stage.id))));
+            } else {
+                setSelectedCcs((prev) => (prev.size > 0 ? prev : new Set((data.ccs || []).map((cc) => cc.name))));
+            }
+        }, [stageOrCcMode, data]);
 
-            const filteredCharacters = useMemo(() => {
-                if (!data) return [];
-                return data.characters.filter((character) => {
-                    const byName = character.name.toLowerCase().includes(characterSearch.toLowerCase());
-                    const byClass = characterClassFilters.size === 0 || characterClassFilters.has(character.class);
-                    const byElement = characterElementFilters.size === 0 || characterElementFilters.has(character.element);
-                    const byFaction = characterFactionFilters.size === 0 || characterFactionFilters.has(character.faction);
-                    const byWeaponType = characterWeaponTypeFilters.size === 0 || characterWeaponTypeFilters.has(character.type);
-                    const byRarity = characterRarityFilters.size === 0 || characterRarityFilters.has(character.rarity);
-                    return byName && byClass && byElement && byFaction && byWeaponType && byRarity;
+        const filteredCharacters = useMemo(() => {
+            if (!data) return [];
+            return data.characters.filter((character) => {
+                const byName = character.name.toLowerCase().includes(characterSearch.toLowerCase());
+                const byClass = characterClassFilters.size === 0 || characterClassFilters.has(character.class);
+                const byElement = characterElementFilters.size === 0 || characterElementFilters.has(character.element);
+                const byFaction = characterFactionFilters.size === 0 || characterFactionFilters.has(character.faction);
+                const byWeaponType = characterWeaponTypeFilters.size === 0 || characterWeaponTypeFilters.has(character.type);
+                const byRarity = characterRarityFilters.size === 0 || characterRarityFilters.has(character.rarity);
+                return byName && byClass && byElement && byFaction && byWeaponType && byRarity;
+            });
+        }, [data, characterSearch, characterClassFilters, characterElementFilters, characterFactionFilters, characterWeaponTypeFilters, characterRarityFilters]);
+
+        const filteredWeapons = useMemo(() => {
+            if (!data) return [];
+            return data.weapons.filter((weapon) => {
+                const byName = weapon.name.toLowerCase().includes(weaponSearch.toLowerCase());
+                const byCategory = weaponCategoryFilters.size === 0 || weaponCategoryFilters.has(weapon.type);
+                const byRarity = weaponRarityFilters.size === 0 || weaponRarityFilters.has(weapon.rarity);
+                return byName && byCategory && byRarity;
+            }).sort(sortByRarityThenName);
+        }, [data, weaponSearch, weaponCategoryFilters, weaponRarityFilters]);
+
+        const sortedFilteredCharacters = useMemo(
+            () => [...filteredCharacters].sort(sortByRarityThenName),
+            [filteredCharacters]
+        );
+
+        const filteredStages = useMemo(() => {
+            if (!data) return [];
+            return data.stagesFlat.filter((stage) => {
+                const text = `${stage.zone} ${stage.category} ${stage.name}`.toLowerCase();
+                return text.includes(stageSearch.toLowerCase());
+            });
+        }, [data, stageSearch]);
+
+        const groupedStages = useMemo(() => {
+            const grouped = {};
+            (filteredStages || []).forEach((stage) => {
+                const zoneKey = stage.zone;
+                if (!grouped[zoneKey]) grouped[zoneKey] = {};
+                const catKey = stage.category;
+                if (!grouped[zoneKey][catKey]) grouped[zoneKey][catKey] = [];
+                grouped[zoneKey][catKey].push(stage);
+            });
+
+            Object.keys(grouped).forEach((zoneKey) => {
+                Object.keys(grouped[zoneKey]).forEach((catKey) => {
+                    grouped[zoneKey][catKey].sort((a, b) => a.lv - b.lv);
                 });
-            }, [data, characterSearch, characterClassFilters, characterElementFilters, characterFactionFilters, characterWeaponTypeFilters, characterRarityFilters]);
+            });
 
-            const filteredWeapons = useMemo(() => {
-                if (!data) return [];
-                return data.weapons.filter((weapon) => {
-                    const byName = weapon.name.toLowerCase().includes(weaponSearch.toLowerCase());
-                    const byCategory = weaponCategoryFilters.size === 0 || weaponCategoryFilters.has(weapon.type);
-                    const byRarity = weaponRarityFilters.size === 0 || weaponRarityFilters.has(weapon.rarity);
-                    return byName && byCategory && byRarity;
-                }).sort(sortByRarityThenName);
-            }, [data, weaponSearch, weaponCategoryFilters, weaponRarityFilters]);
-
-            const sortedFilteredCharacters = useMemo(
-                () => [...filteredCharacters].sort(sortByRarityThenName),
-                [filteredCharacters]
-            );
-
-            const filteredStages = useMemo(() => {
-                if (!data) return [];
-                return data.stagesFlat.filter((stage) => {
-                    const text = `${stage.zone} ${stage.category} ${stage.name}`.toLowerCase();
-                    return text.includes(stageSearch.toLowerCase());
-                });
-            }, [data, stageSearch]);
-
-            const groupedStages = useMemo(() => {
-                const grouped = {};
-                (filteredStages || []).forEach((stage) => {
-                    const zoneKey = stage.zone;
-                    if (!grouped[zoneKey]) grouped[zoneKey] = {};
-                    const catKey = stage.category;
-                    if (!grouped[zoneKey][catKey]) grouped[zoneKey][catKey] = [];
-                    grouped[zoneKey][catKey].push(stage);
-                });
-
-                Object.keys(grouped).forEach((zoneKey) => {
-                    Object.keys(grouped[zoneKey]).forEach((catKey) => {
-                        grouped[zoneKey][catKey].sort((a, b) => a.lv - b.lv);
-                    });
-                });
-
-                return grouped;
-            }, [filteredStages]);
+            return grouped;
+        }, [filteredStages]);
 
 
-            const filteredCcs = useMemo(() => {
-                if (!data) return [];
-                return (data.ccs || []).filter((cc) => cc.name.toLowerCase().includes(ccSearch.toLowerCase()));
-            }, [data, ccSearch]);
+        const filteredCcs = useMemo(() => {
+            if (!data) return [];
+            return (data.ccs || []).filter((cc) => cc.name.toLowerCase().includes(ccSearch.toLowerCase()));
+        }, [data, ccSearch]);
 
-            const runRandomizer = () => {
-                if (!data) return;
+        const runRandomizer = () => {
+            if (!data) return;
 
-                const availableCharacters = data.characters.filter((character) => selectedCharacters.has(character.name));
-                if (availableCharacters.length < 4) {
-                    setOutput({ error: 'Select at least 4 characters.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode, selectedCharacters, selectedWeapons, selectedStages });
-                    setShowOutputModal(true);
-                    return;
-                }
-
-                const team = pickUnique(availableCharacters, 4);
-
-                const availableWeapons = data.weapons.filter(
-                    (weapon) => selectedWeapons.has(weapon.name) && (weaponCounts[weapon.name] || 0) > 0
-                );
-                if (availableWeapons.length === 0) {
-                    setOutput({ error: 'Select at least one weapon with count > 0.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode, selectedCharacters, selectedWeapons, selectedStages });
-                    setShowOutputModal(true);
-                    return;
-                }
-
-                const assignment = assignWeaponsToCharacters(team, availableWeapons, weaponCounts);
-                if (!assignment) {
-                    setOutput({
-                        error: 'Cannot assign weapons to all 4 characters. Increase counts or select more compatible weapon categories.',
-                        team,
-                        weapons: [],
-                        stageOrCc: null,
-                        mode: stageOrCcMode,
-                        selectedCharacters, selectedWeapons, selectedStages
-                    });
-                    setShowOutputModal(true);
-                    return;
-                }
-
-                if (stageOrCcMode === 'stage') {
-                    const availableStageList = data.stagesFlat.filter((stage) => selectedStages.has(stage.id));
-                    if (availableStageList.length === 0) {
-                        setOutput({ error: 'Select at least one stage.', team, weapons: [], stageOrCc: null, mode: 'stage', selectedCharacters, selectedWeapons, selectedStages });
-                        setShowOutputModal(true);
-                        return;
-                    }
-                    setOutput({
-                        error: '',
-                        team,
-                        weapons: team.map((character) => ({ characterName: character.name, weapon: assignment[character.name] })),
-                        stageOrCc: getRandomItem(availableStageList),
-                        mode: 'stage',
-                        selectedCharacters, selectedWeapons, selectedStages
-                    });
-                    setShowOutputModal(true);
-                    return;
-                }
-
-                const availableCcList = (data.ccs || []).filter((cc) => selectedCcs.has(cc.name));
-                if (availableCcList.length === 0) {
-                    setOutput({ error: 'Select at least one CC.', team, weapons: [], stageOrCc: null, mode: 'cc', selectedCharacters, selectedWeapons, selectedStages });
-                    setShowOutputModal(true);
-                    return;
-                }
-
+            const availableCharacters = data.characters.filter((character) => selectedCharacters.has(character.name));
+            if (availableCharacters.length < 4) {
                 setOutput({
-                    error: '',
+                    error: 'Select at least 4 characters.',
+                    team: [],
+                    weapons: [],
+                    stageOrCc: null,
+                    mode: stageOrCcMode,
+                    selectedCharacters,
+                    selectedWeapons,
+                    selectedStages
+                });
+                setShowOutputModal(true);
+                return;
+            }
+
+            const team = pickUnique(availableCharacters, 4);
+
+            const availableWeapons = data.weapons.filter(
+                (weapon) => selectedWeapons.has(weapon.name) && (weaponCounts[weapon.name] || 0) > 0
+            );
+            if (availableWeapons.length === 0) {
+                setOutput({
+                    error: 'Select at least one weapon with count > 0.',
+                    team: [],
+                    weapons: [],
+                    stageOrCc: null,
+                    mode: stageOrCcMode,
+                    selectedCharacters,
+                    selectedWeapons,
+                    selectedStages
+                });
+                setShowOutputModal(true);
+                return;
+            }
+
+            const assignment = assignWeaponsToCharacters(team, availableWeapons, weaponCounts);
+            if (!assignment) {
+                setOutput({
+                    error: 'Cannot assign weapons to all 4 characters. Increase counts or select more compatible weapon categories.',
                     team,
-                    weapons: team.map((character) => ({ characterName: character.name, weapon: assignment[character.name] })),
-                    stageOrCc: getRandomItem(availableCcList),
-                    mode: 'cc',
+                    weapons: [],
+                    stageOrCc: null,
+                    mode: stageOrCcMode,
                     selectedCharacters, selectedWeapons, selectedStages
                 });
                 setShowOutputModal(true);
-            };
+                return;
+            }
 
-            if (error) return <div className="loading-overlay">{error}</div>;
-            if (!data) return <div className="loading-overlay">Loading data...</div>;
+            if (stageOrCcMode === 'stage') {
+                const availableStageList = data.stagesFlat.filter((stage) => selectedStages.has(stage.id));
+                if (availableStageList.length === 0) {
+                    setOutput({
+                        error: 'Select at least one stage.',
+                        team,
+                        weapons: [],
+                        stageOrCc: null,
+                        mode: 'stage',
+                        selectedCharacters,
+                        selectedWeapons,
+                        selectedStages
+                    });
+                    setShowOutputModal(true);
+                    return;
+                }
+                setOutput({
+                    error: '',
+                    team,
+                    weapons: team.map((character) => ({
+                        characterName: character.name,
+                        weapon: assignment[character.name]
+                    })),
+                    stageOrCc: getRandomItem(availableStageList),
+                    mode: 'stage',
+                    selectedCharacters, selectedWeapons, selectedStages
+                });
+                setShowOutputModal(true);
+                return;
+            }
 
-            return (
-                <div className="container-fluid py-4 app-shell">
-                    {showImportExportModal && (
-                        <div className="custom-modal-overlay" onClick={closeModals}>
-                            <div className="custom-modal" style={{maxWidth: '700px'}} onClick={e => e.stopPropagation()}>
-                                <h4 className="mb-3">Settings Import / Export</h4>
-                                <div className="d-flex gap-2 mb-3">
-                                    <button className="reset-btn" onClick={handleExportSettings}>EXPORT JSON</button>
-                                    <button className="reset-btn" onClick={() => { setImportExportMode('import'); setImportExportError(''); }}>IMPORT JSON</button>
-                                </div>
-                                <label htmlFor="importExportTextarea" style={{ color: '#aaa', fontSize: '0.85rem' }}>
-                                    {importExportMode === 'export'
-                                        ? 'Copy this JSON to export your saved settings.'
-                                        : 'Paste JSON object to import your settings.'}
-                                </label>
-                                <textarea
-                                    id="importExportTextarea"
-                                    className="form-control form-control-sm bg-dark text-light border-secondary"
-                                    rows="14"
-                                    value={importExportText}
-                                    readOnly={importExportMode === 'export'}
-                                    onChange={e => setImportExportText(e.target.value)}
-                                    placeholder='Paste your settings here...'
-                                    style={{fontFamily: 'Consolas, Monaco, monospace'}}
-                                />
-                                {importExportError && (
-                                    <div className="mt-2" style={{color: '#ff8a8a', fontSize: '0.85rem'}}>{importExportError}</div>
+            const availableCcList = (data.ccs || []).filter((cc) => selectedCcs.has(cc.name));
+            if (availableCcList.length === 0) {
+                setOutput({
+                    error: 'Select at least one CC.',
+                    team,
+                    weapons: [],
+                    stageOrCc: null,
+                    mode: 'cc',
+                    selectedCharacters,
+                    selectedWeapons,
+                    selectedStages
+                });
+                setShowOutputModal(true);
+                return;
+            }
+
+            setOutput({
+                error: '',
+                team,
+                weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
+                stageOrCc: getRandomItem(availableCcList),
+                mode: 'cc',
+                selectedCharacters, selectedWeapons, selectedStages
+            });
+            setShowOutputModal(true);
+        };
+
+        if (error) return <div className="loading-overlay">{error}</div>;
+        if (!data) return <div className="loading-overlay">Loading data...</div>;
+
+        return (
+            <div className="container-fluid py-4 app-shell">
+                {showImportExportModal && (
+                    <div className="custom-modal-overlay" onClick={closeModals}>
+                        <div className="custom-modal" style={{maxWidth: '700px'}} onClick={e => e.stopPropagation()}>
+                            <h4 className="mb-3">Settings Import / Export</h4>
+                            <div className="d-flex gap-2 mb-3">
+                                <button className="reset-btn" onClick={handleExportSettings}>EXPORT JSON</button>
+                                <button className="reset-btn" onClick={() => {
+                                    setImportExportMode('import');
+                                    setImportExportError('');
+                                }}>IMPORT JSON
+                                </button>
+                            </div>
+                            <label htmlFor="importExportTextarea" style={{color: '#aaa', fontSize: '0.85rem'}}>
+                                {importExportMode === 'export'
+                                    ? 'Copy this JSON to export your saved settings.'
+                                    : 'Paste JSON object to import your settings.'}
+                            </label>
+                            <textarea
+                                id="importExportTextarea"
+                                className="form-control form-control-sm bg-dark text-light border-secondary"
+                                rows="14"
+                                value={importExportText}
+                                readOnly={importExportMode === 'export'}
+                                onChange={e => setImportExportText(e.target.value)}
+                                placeholder="Paste your settings here..."
+                                style={{fontFamily: 'Consolas, Monaco, monospace'}}
+                            />
+                            {importExportError && (
+                                <div className="mt-2"
+                                     style={{color: '#ff8a8a', fontSize: '0.85rem'}}>{importExportError}</div>
+                            )}
+                            <div className="modal-buttons">
+                                {importExportMode === 'import' && (
+                                    <button className="modal-btn btn-confirm"
+                                            onClick={handleImportSettings}>IMPORT</button>
                                 )}
-                                <div className="modal-buttons">
-                                    {importExportMode === 'import' && (
-                                        <button className="modal-btn btn-confirm" onClick={handleImportSettings}>IMPORT</button>
-                                    )}
-                                    <button className="modal-btn btn-cancel" onClick={closeModals}>CLOSE</button>
-                                </div>
+                                <button className="modal-btn btn-cancel" onClick={closeModals}>CLOSE</button>
                             </div>
-                        </div>
-                    )}
-                    {showOutputModal && <RandomizerOutputModal
-                        output={output}
-                        onClose={closeModals}
-                        onRandomize={runRandomizer}
-                        onToggleCharacter={(name) => {
-                            const next = toggleInSet(selectedCharacters, name);
-                            setSelectedCharacters(next);
-                            setOutput(prev => ({ ...prev, selectedCharacters: next }));
-                        }}
-                        onToggleWeapon={(name) => {
-                            const next = toggleInSet(selectedWeapons, name);
-                            setSelectedWeapons(next);
-                            setOutput(prev => ({ ...prev, selectedWeapons: next }));
-                        }}
-                        onToggleStage={(id) => {
-                            const next = toggleInSet(selectedStages, id);
-                            setSelectedStages(next);
-                            setOutput(prev => ({ ...prev, selectedStages: next }));
-                        }}
-                    />}
-                    <header className="mb-3">
-                        <div className="d-flex justify-content-between align-items-center mb-2">
-                            <h3 className="m-0 fw-bold">Randomizer</h3>
-                            <div className="d-flex gap-2">
-                                <a className="mini-btn btn-yellow" href="https://moques.github.io/endfieldtools/" target="_blank" rel="noopener noreferrer">HUB</a>
-                                <button type="button" className="mini-btn" onClick={() => openImportExportModal('export')}>EXPORT</button>
-                                <button type="button" className="mini-btn" onClick={() => openImportExportModal('import')}>IMPORT</button>
-                                <button type="button" className="mini-btn" onClick={runRandomizer}>RANDOMIZE</button>
-                            </div>
-                        </div>
-                    </header>
-
-                    <section className="result-card mb-4">
-                        <div className="empty-state">Press RANDOMIZE to generate a team.</div>
-                    </section>
-
-                    <div className="row g-4">
-                        <div className="col-lg-6">
-                            <AccordionSection
-                                title="Characters"
-                                titleExtra={<span className="count-text-header">Selected: {selectedCharacters.size}</span>}
-                                defaultOpen={true}
-                            >
-                                <div className="filter-row">
-                                    <input
-                                        className="filter-input"
-                                        type="text"
-                                        aria-label="Search characters"
-                                        placeholder="Search character..."
-                                        value={characterSearch}
-                                        onChange={(e) => setCharacterSearch(e.target.value)}
-                                    />
-                                </div>
-
-                                <AccordionSection title="Filters" defaultOpen={false}>
-
-                                    <ChipFilterGroup
-                                        title="Class"
-                                        options={data.classes || []}
-                                        selectedSet={characterClassFilters}
-                                        onToggle={(value) => setCharacterClassFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setCharacterClassFilters(new Set(data.classes || []))}
-                                        onClear={() => setCharacterClassFilters(new Set())}
-                                    />
-                                    <ChipFilterGroup
-                                        title="Element"
-                                        options={data.elements || []}
-                                        selectedSet={characterElementFilters}
-                                        onToggle={(value) => setCharacterElementFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setCharacterElementFilters(new Set(data.elements || []))}
-                                        onClear={() => setCharacterElementFilters(new Set())}
-                                    />
-                                    <ChipFilterGroup
-                                        title="Faction"
-                                        options={data.fractions || []}
-                                        selectedSet={characterFactionFilters}
-                                        onToggle={(value) => setCharacterFactionFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setCharacterFactionFilters(new Set(data.fractions || []))}
-                                        onClear={() => setCharacterFactionFilters(new Set())}
-                                    />
-                                    <ChipFilterGroup
-                                        title="Weapon Type"
-                                        options={data.weaponcategory || []}
-                                        selectedSet={characterWeaponTypeFilters}
-                                        onToggle={(value) => setCharacterWeaponTypeFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setCharacterWeaponTypeFilters(new Set(data.weaponcategory || []))}
-                                        onClear={() => setCharacterWeaponTypeFilters(new Set())}
-                                    />
-                                    <ChipFilterGroup
-                                        title="Rarity"
-                                        options={data.characterRarities || []}
-                                        selectedSet={characterRarityFilters}
-                                        onToggle={(value) => setCharacterRarityFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setCharacterRarityFilters(new Set(data.characterRarities || []))}
-                                        onClear={() => setCharacterRarityFilters(new Set())}
-                                    />
-                                </AccordionSection>
-
-                                <div className="control-row mt-2">
-                                    <button
-                                        type="button"
-                                        className="mini-btn"
-                                        onClick={() => setSelectedCharacters((prev) => {
-                                            const next = new Set(prev);
-                                            filteredCharacters.forEach((item) => next.add(item.name));
-                                            return next;
-                                        })}
-                                    >
-                                        Select visible
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="mini-btn"
-                                        onClick={() => setSelectedCharacters((prev) => {
-                                            const next = new Set(prev);
-                                            filteredCharacters.forEach((item) => next.delete(item.name));
-                                            return next;
-                                        })}
-                                    >
-                                        Clear visible
-                                    </button>
-                                </div>
-
-                                <div className="tile-grid">
-                                    {sortedFilteredCharacters.map((character) => (
-                                        <SquareTile
-                                            key={character.name}
-                                            selected={selectedCharacters.has(character.name)}
-                                            onClick={() => setSelectedCharacters((prev) => toggleInSet(prev, character.name))}
-                                            image={`images/character_${normalizeName(character.name)}.png`}
-                                            placeholderImage="images/placeholder_character.svg"
-                                            title={character.name}
-                                            tooltip={character.name}
-                                            rarity={character.rarity}
-                                            useImageRarityBg={true}
-                                        />
-                                    ))}
-                                </div>
-                            </AccordionSection>
-
-                            <AccordionSection
-                                title="Weapons"
-                                titleExtra={<span className="count-text-header">Selected: {selectedWeapons.size}</span>}
-                                defaultOpen={true}
-                            >
-                                <div className="filter-row">
-                                    <input
-                                        className="filter-input"
-                                        type="text"
-                                        aria-label="Search weapons"
-                                        placeholder="Search weapon..."
-                                        value={weaponSearch}
-                                        onChange={(e) => setWeaponSearch(e.target.value)}
-                                    />
-                                </div>
-
-                                <AccordionSection title="Filters" defaultOpen={false}>
-
-                                    <ChipFilterGroup
-                                        title="Weapon Category"
-                                        options={data.weaponcategory || []}
-                                        selectedSet={weaponCategoryFilters}
-                                        onToggle={(value) => setWeaponCategoryFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setWeaponCategoryFilters(new Set(data.weaponcategory || []))}
-                                        onClear={() => setWeaponCategoryFilters(new Set())}
-                                    />
-                                    <ChipFilterGroup
-                                        title="Rarity"
-                                        options={data.weaponRarities || []}
-                                        selectedSet={weaponRarityFilters}
-                                        onToggle={(value) => setWeaponRarityFilters((prev) => toggleInSet(prev, value))}
-                                        onSelectAll={() => setWeaponRarityFilters(new Set(data.weaponRarities || []))}
-                                        onClear={() => setWeaponRarityFilters(new Set())}
-                                    />
-                                </AccordionSection>
-
-                                <div className="control-row mt-2">
-                                    <button
-                                        type="button"
-                                        className="mini-btn"
-                                        onClick={() => setSelectedWeapons((prev) => {
-                                            const next = new Set(prev);
-                                            filteredWeapons.forEach((item) => next.add(item.name));
-                                            return next;
-                                        })}
-                                    >
-                                        Select visible
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="mini-btn"
-                                        onClick={() => setSelectedWeapons((prev) => {
-                                            const next = new Set(prev);
-                                            filteredWeapons.forEach((item) => next.delete(item.name));
-                                            return next;
-                                        })}
-                                    >
-                                        Clear visible
-                                    </button>
-                                </div>
-
-                                <div className="tile-grid">
-                                    {filteredWeapons.map((weapon) => (
-                                        <SquareTile
-                                            key={weapon.name}
-                                            selected={selectedWeapons.has(weapon.name)}
-                                            onClick={() => setSelectedWeapons((prev) => toggleInSet(prev, weapon.name))}
-                                            image={`images/weapon_${normalizeName(weapon.name)}.png`}
-                                            placeholderImage={`images/weaponcategory_${normalizeName(weapon.type)}.png`}
-                                            title={weapon.name}
-                                            tooltip={weapon.name}
-                                            rarity={weapon.rarity}
-                                            useImageRarityBg={true}
-                                        >
-                                            <div className="count-input-wrap" onClick={(e) => e.stopPropagation()}>
-                                                <input
-                                                    id={`count-${normalizeName(weapon.name)}`}
-                                                    className="count-input"
-                                                    type="number"
-                                                    aria-label={`Count for ${weapon.name}`}
-                                                    min="0"
-                                                    value={weaponCounts[weapon.name] || 0}
-                                                    onChange={(e) => {
-                                                        const value = Number.parseInt(e.target.value, 10);
-                                                        setWeaponCounts((prev) => ({
-                                                            ...prev,
-                                                            [weapon.name]: Number.isNaN(value) ? 0 : Math.max(0, value)
-                                                        }));
-                                                    }}
-                                                />
-                                            </div>
-                                        </SquareTile>
-                                    ))}
-                                </div>
-                            </AccordionSection>
-                        </div>
-
-                        <div className="col-lg-6">
-                            <AccordionSection title="Stage / CC Mode" defaultOpen={true}>
-                                <div className="mode-row">
-                                    <label className={`mode-pill ${stageOrCcMode === 'stage' ? 'mode-pill-active' : ''}`}>
-                                        <input
-                                            type="radio"
-                                            name="stage-or-cc"
-                                            checked={stageOrCcMode === 'stage'}
-                                            onChange={() => setStageOrCcMode('stage')}
-                                        />
-                                        <span>Stage</span>
-                                    </label>
-                                    <label className={`mode-pill ${stageOrCcMode === 'cc' ? 'mode-pill-active' : ''}`}>
-                                        <input
-                                            type="radio"
-                                            name="stage-or-cc"
-                                            checked={stageOrCcMode === 'cc'}
-                                            onChange={() => setStageOrCcMode('cc')}
-                                        />
-                                        <span>CC</span>
-                                    </label>
-                                </div>
-                                <div className="muted-note">Switching mode hides and turns off the other section selection.</div>
-                            </AccordionSection>
-
-                            {stageOrCcMode === 'stage' && (
-                                <AccordionSection
-                                    title="Stages"
-                                    titleExtra={<span className="count-text-header">Selected: {selectedStages.size}</span>}
-                                    defaultOpen={true}
-                                >
-                                    <div className="filter-row">
-                                        <input
-                                            className="filter-input"
-                                            type="text"
-                                            aria-label="Search stages"
-                                            placeholder="Search stage..."
-                                            value={stageSearch}
-                                            onChange={(e) => setStageSearch(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="control-row">
-                                        <button
-                                            type="button"
-                                            className="mini-btn"
-                                            onClick={() => setSelectedStages((prev) => {
-                                                const next = new Set(prev);
-                                                filteredStages.forEach((item) => next.add(item.id));
-                                                return next;
-                                            })}
-                                        >
-                                            Select visible
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mini-btn"
-                                            onClick={() => setSelectedStages((prev) => {
-                                                const next = new Set(prev);
-                                                filteredStages.forEach((item) => next.delete(item.id));
-                                                return next;
-                                            })}
-                                        >
-                                            Clear visible
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mini-btn"
-                                            onClick={() => {
-                                                setSelectedStages(prev => {
-                                                    const next = new Set(prev);
-                                                    Object.values(groupedStages).forEach(categories => {
-                                                        Object.values(categories).forEach(items => {
-                                                            const toKeep = items.at(-1);
-                                                            items.forEach(item => {
-                                                                if (item.id !== toKeep.id) {
-                                                                    next.delete(item.id);
-                                                                }
-                                                            });
-                                                        });
-                                                    });
-                                                    return next;
-                                                });
-                                            }}
-                                        >
-                                            Unselect lesser stages
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mini-btn"
-                                            onClick={() => {
-                                                setSelectedStages(prev => {
-                                                    const next = new Set(prev);
-                                                    filteredStages.forEach(item => {
-                                                        if (!item.zone.includes('RE-Crisis')) {
-                                                            next.delete(item.id);
-                                                        }
-                                                    });
-                                                    return next;
-                                                });
-                                            }}
-                                        >
-                                            Unselect non RE-Crisis
-                                        </button>
-                                    </div>
-                                    {Object.entries(groupedStages).map(([zoneName, categories]) => {
-                                        const allZoneItems = Object.values(categories).flat();
-                                        return (
-                                            <div key={zoneName} className="stage-group-block">
-                                                <button
-                                                    type="button"
-                                                    className="mini-btn mb-9"
-                                                    onClick={() => {
-                                                        setSelectedStages(prev => {
-                                                            const next = new Set(prev);
-                                                            const allSelected = allZoneItems.every(item => next.has(item.id));
-                                                            if (allSelected) {
-                                                                allZoneItems.forEach(item => next.delete(item.id));
-                                                            } else {
-                                                                allZoneItems.forEach(item => next.add(item.id));
-                                                            }
-                                                            return next;
-                                                        });
-                                                    }}
-                                                >
-                                                    {zoneName}
-                                                </button>
-                                                {Object.entries(categories).map(([categoryName, items]) => (
-                                                    <div key={categoryName} className="stage-group-block" style={{ marginLeft: '1rem' }}>
-                                                        <button
-                                                            type="button"
-                                                            className="mini-btn mb-9"
-                                                            onClick={() => {
-                                                                setSelectedStages(prev => {
-                                                                    const next = new Set(prev);
-                                                                    const allSelected = items.every(item => next.has(item.id));
-                                                                    if (allSelected) {
-                                                                        items.forEach(item => next.delete(item.id));
-                                                                    } else {
-                                                                        items.forEach(item => next.add(item.id));
-                                                                    }
-                                                                    return next;
-                                                                });
-                                                            }}
-                                                        >
-                                                            {categoryName}
-                                                        </button>
-                                                        <div className="tile-grid" style={{ marginLeft: '1rem' }}>
-                                                            {items.map((stage) => (
-                                                                <SquareTile
-                                                                    key={stage.id}
-                                                                    selected={selectedStages.has(stage.id)}
-                                                                    onClick={() => setSelectedStages((prev) => toggleInSet(prev, stage.id))}
-                                                                    image={`images/stage_${normalizeName(`${stage.zone}_${stage.category}`)}.png`}
-                                                                    placeholderImage="images/placeholder_stage.svg"
-                                                                    title={stage.name}
-                                                                    tooltip={stage.name}
-                                                                    badge={`Lv ${stage.lv}`}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        );
-                                    })}
-                                </AccordionSection>
-                            )}
-
-                            {stageOrCcMode === 'cc' && (
-                                <AccordionSection
-                                    title="CC"
-                                    titleExtra={<span className="count-text-header">Selected: {selectedCcs.size}</span>}
-                                    defaultOpen={true}
-                                >
-                                    <div className="filter-row">
-                                        <input
-                                            className="filter-input"
-                                            type="text"
-                                            aria-label="Search cc"
-                                            placeholder="Search CC..."
-                                            value={ccSearch}
-                                            onChange={(e) => setCcSearch(e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="control-row">
-                                        <button
-                                            type="button"
-                                            className="mini-btn"
-                                            onClick={() => setSelectedCcs((prev) => {
-                                                const next = new Set(prev);
-                                                filteredCcs.forEach((item) => next.add(item.name));
-                                                return next;
-                                            })}
-                                        >
-                                            Select visible
-                                        </button>
-                                        <button
-                                            type="button"
-                                            className="mini-btn"
-                                            onClick={() => setSelectedCcs((prev) => {
-                                                const next = new Set(prev);
-                                                filteredCcs.forEach((item) => next.delete(item.name));
-                                                return next;
-                                            })}
-                                        >
-                                            Clear visible
-                                        </button>
-                                    </div>
-                                    <div className="tile-grid">
-                                        {filteredCcs.map((cc) => (
-                                            <SquareTile
-                                                key={cc.name}
-                                                selected={selectedCcs.has(cc.name)}
-                                                onClick={() => setSelectedCcs((prev) => toggleInSet(prev, cc.name))}
-                                                image="images/placeholder_stage.svg"
-                                                placeholderImage="images/placeholder_stage.svg"
-                                                title={cc.name}
-                                                subtitle="Tags randomization not implemented"
-                                                showText={true}
-                                            />
-                                        ))}
-                                    </div>
-                                </AccordionSection>
-                            )}
                         </div>
                     </div>
-                </div>
-            );
-        }
+                )}
+                {showOutputModal && <RandomizerOutputModal
+                    output={output}
+                    onClose={closeModals}
+                    onRandomize={runRandomizer}
+                    onToggleCharacter={(name) => {
+                        const next = toggleInSet(selectedCharacters, name);
+                        setSelectedCharacters(next);
+                        setOutput(prev => ({...prev, selectedCharacters: next}));
+                    }}
+                    onToggleWeapon={(name) => {
+                        const next = toggleInSet(selectedWeapons, name);
+                        setSelectedWeapons(next);
+                        setOutput(prev => ({...prev, selectedWeapons: next}));
+                    }}
+                    onToggleStage={(id) => {
+                        const next = toggleInSet(selectedStages, id);
+                        setSelectedStages(next);
+                        setOutput(prev => ({...prev, selectedStages: next}));
+                    }}
+                />}
+                <header className="mb-3">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                        <h3 className="m-0 fw-bold">Randomizer</h3>
+                        <div className="d-flex gap-2">
+                            <a className="mini-btn btn-yellow" href="https://moques.github.io/endfieldtools/"
+                               target="_blank" rel="noopener noreferrer">HUB</a>
+                            <button type="button" className="mini-btn"
+                                    onClick={() => openImportExportModal('export')}>EXPORT
+                            </button>
+                            <button type="button" className="mini-btn"
+                                    onClick={() => openImportExportModal('import')}>IMPORT
+                            </button>
+                            <button type="button" className="mini-btn" onClick={runRandomizer}>RANDOMIZE</button>
+                        </div>
+                    </div>
+                </header>
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+                <section className="result-card mb-4">
+                    <div className="empty-state">Press RANDOMIZE to generate a team.</div>
+                </section>
+
+                <div className="row g-4">
+                    <div className="col-lg-6">
+                        <AccordionSection
+                            title="Characters"
+                            titleExtra={<span className="count-text-header">Selected: {selectedCharacters.size}</span>}
+                            defaultOpen={true}
+                        >
+                            <div className="filter-row">
+                                <input
+                                    className="filter-input"
+                                    type="text"
+                                    aria-label="Search characters"
+                                    placeholder="Search character..."
+                                    value={characterSearch}
+                                    onChange={(e) => setCharacterSearch(e.target.value)}
+                                />
+                            </div>
+
+                            <AccordionSection title="Filters" defaultOpen={false}>
+
+                                <ChipFilterGroup
+                                    title="Class"
+                                    options={data.classes || []}
+                                    selectedSet={characterClassFilters}
+                                    onToggle={(value) => setCharacterClassFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setCharacterClassFilters(new Set(data.classes || []))}
+                                    onClear={() => setCharacterClassFilters(new Set())}
+                                />
+                                <ChipFilterGroup
+                                    title="Element"
+                                    options={data.elements || []}
+                                    selectedSet={characterElementFilters}
+                                    onToggle={(value) => setCharacterElementFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setCharacterElementFilters(new Set(data.elements || []))}
+                                    onClear={() => setCharacterElementFilters(new Set())}
+                                />
+                                <ChipFilterGroup
+                                    title="Faction"
+                                    options={data.fractions || []}
+                                    selectedSet={characterFactionFilters}
+                                    onToggle={(value) => setCharacterFactionFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setCharacterFactionFilters(new Set(data.fractions || []))}
+                                    onClear={() => setCharacterFactionFilters(new Set())}
+                                />
+                                <ChipFilterGroup
+                                    title="Weapon Type"
+                                    options={data.weaponcategory || []}
+                                    selectedSet={characterWeaponTypeFilters}
+                                    onToggle={(value) => setCharacterWeaponTypeFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setCharacterWeaponTypeFilters(new Set(data.weaponcategory || []))}
+                                    onClear={() => setCharacterWeaponTypeFilters(new Set())}
+                                />
+                                <ChipFilterGroup
+                                    title="Rarity"
+                                    options={data.characterRarities || []}
+                                    selectedSet={characterRarityFilters}
+                                    onToggle={(value) => setCharacterRarityFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setCharacterRarityFilters(new Set(data.characterRarities || []))}
+                                    onClear={() => setCharacterRarityFilters(new Set())}
+                                />
+                            </AccordionSection>
+
+                            <div className="control-row mt-2">
+                                <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => setSelectedCharacters((prev) => {
+                                        const next = new Set(prev);
+                                        filteredCharacters.forEach((item) => next.add(item.name));
+                                        return next;
+                                    })}
+                                >
+                                    Select visible
+                                </button>
+                                <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => setSelectedCharacters((prev) => {
+                                        const next = new Set(prev);
+                                        filteredCharacters.forEach((item) => next.delete(item.name));
+                                        return next;
+                                    })}
+                                >
+                                    Clear visible
+                                </button>
+                            </div>
+
+                            <div className="tile-grid">
+                                {sortedFilteredCharacters.map((character) => (
+                                    <SquareTile
+                                        key={character.name}
+                                        selected={selectedCharacters.has(character.name)}
+                                        onClick={() => setSelectedCharacters((prev) => toggleInSet(prev, character.name))}
+                                        image={`images/character_${normalizeName(character.name)}.png`}
+                                        placeholderImage="images/placeholder_character.svg"
+                                        title={character.name}
+                                        tooltip={character.name}
+                                        rarity={character.rarity}
+                                        useImageRarityBg={true}
+                                    />
+                                ))}
+                            </div>
+                        </AccordionSection>
+
+                        <AccordionSection
+                            title="Weapons"
+                            titleExtra={<span className="count-text-header">Selected: {selectedWeapons.size}</span>}
+                            defaultOpen={true}
+                        >
+                            <div className="filter-row">
+                                <input
+                                    className="filter-input"
+                                    type="text"
+                                    aria-label="Search weapons"
+                                    placeholder="Search weapon..."
+                                    value={weaponSearch}
+                                    onChange={(e) => setWeaponSearch(e.target.value)}
+                                />
+                            </div>
+
+                            <AccordionSection title="Filters" defaultOpen={false}>
+
+                                <ChipFilterGroup
+                                    title="Weapon Category"
+                                    options={data.weaponcategory || []}
+                                    selectedSet={weaponCategoryFilters}
+                                    onToggle={(value) => setWeaponCategoryFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setWeaponCategoryFilters(new Set(data.weaponcategory || []))}
+                                    onClear={() => setWeaponCategoryFilters(new Set())}
+                                />
+                                <ChipFilterGroup
+                                    title="Rarity"
+                                    options={data.weaponRarities || []}
+                                    selectedSet={weaponRarityFilters}
+                                    onToggle={(value) => setWeaponRarityFilters((prev) => toggleInSet(prev, value))}
+                                    onSelectAll={() => setWeaponRarityFilters(new Set(data.weaponRarities || []))}
+                                    onClear={() => setWeaponRarityFilters(new Set())}
+                                />
+                            </AccordionSection>
+
+                            <div className="control-row mt-2">
+                                <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => setSelectedWeapons((prev) => {
+                                        const next = new Set(prev);
+                                        filteredWeapons.forEach((item) => next.add(item.name));
+                                        return next;
+                                    })}
+                                >
+                                    Select visible
+                                </button>
+                                <button
+                                    type="button"
+                                    className="mini-btn"
+                                    onClick={() => setSelectedWeapons((prev) => {
+                                        const next = new Set(prev);
+                                        filteredWeapons.forEach((item) => next.delete(item.name));
+                                        return next;
+                                    })}
+                                >
+                                    Clear visible
+                                </button>
+                            </div>
+
+                            <div className="tile-grid">
+                                {filteredWeapons.map((weapon) => (
+                                    <SquareTile
+                                        key={weapon.name}
+                                        selected={selectedWeapons.has(weapon.name)}
+                                        onClick={() => setSelectedWeapons((prev) => toggleInSet(prev, weapon.name))}
+                                        image={`images/weapon_${normalizeName(weapon.name)}.png`}
+                                        placeholderImage={`images/weaponcategory_${normalizeName(weapon.type)}.png`}
+                                        title={weapon.name}
+                                        tooltip={weapon.name}
+                                        rarity={weapon.rarity}
+                                        useImageRarityBg={true}
+                                    >
+                                        <div className="count-input-wrap" onClick={(e) => e.stopPropagation()}>
+                                            <input
+                                                id={`count-${normalizeName(weapon.name)}`}
+                                                className="count-input"
+                                                type="number"
+                                                aria-label={`Count for ${weapon.name}`}
+                                                min="0"
+                                                value={weaponCounts[weapon.name] || 0}
+                                                onChange={(e) => {
+                                                    const value = Number.parseInt(e.target.value, 10);
+                                                    setWeaponCounts((prev) => ({
+                                                        ...prev,
+                                                        [weapon.name]: Number.isNaN(value) ? 0 : Math.max(0, value)
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+                                    </SquareTile>
+                                ))}
+                            </div>
+                        </AccordionSection>
+                    </div>
+
+                    <div className="col-lg-6">
+                        <AccordionSection title="Stage / CC Mode" defaultOpen={true}>
+                            <div className="mode-row">
+                                <label className={`mode-pill ${stageOrCcMode === 'stage' ? 'mode-pill-active' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="stage-or-cc"
+                                        checked={stageOrCcMode === 'stage'}
+                                        onChange={() => setStageOrCcMode('stage')}
+                                    />
+                                    <span>Stage</span>
+                                </label>
+                                <label className={`mode-pill ${stageOrCcMode === 'cc' ? 'mode-pill-active' : ''}`}>
+                                    <input
+                                        type="radio"
+                                        name="stage-or-cc"
+                                        checked={stageOrCcMode === 'cc'}
+                                        onChange={() => setStageOrCcMode('cc')}
+                                    />
+                                    <span>CC</span>
+                                </label>
+                            </div>
+                            <div className="muted-note">Switching mode hides and turns off the other section
+                                                        selection.
+                            </div>
+                        </AccordionSection>
+
+                        {stageOrCcMode === 'stage' && (
+                            <AccordionSection
+                                title="Stages"
+                                titleExtra={<span className="count-text-header">Selected: {selectedStages.size}</span>}
+                                defaultOpen={true}
+                            >
+                                <div className="filter-row">
+                                    <input
+                                        className="filter-input"
+                                        type="text"
+                                        aria-label="Search stages"
+                                        placeholder="Search stage..."
+                                        value={stageSearch}
+                                        onChange={(e) => setStageSearch(e.target.value)}
+                                    />
+                                </div>
+                                <div className="control-row">
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedStages((prev) => {
+                                            const next = new Set(prev);
+                                            filteredStages.forEach((item) => next.add(item.id));
+                                            return next;
+                                        })}
+                                    >
+                                        Select visible
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedStages((prev) => {
+                                            const next = new Set(prev);
+                                            filteredStages.forEach((item) => next.delete(item.id));
+                                            return next;
+                                        })}
+                                    >
+                                        Clear visible
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => {
+                                            setSelectedStages(prev => {
+                                                const next = new Set(prev);
+                                                Object.values(groupedStages).forEach(categories => {
+                                                    Object.values(categories).forEach(items => {
+                                                        const toKeep = items.at(-1);
+                                                        items.forEach(item => {
+                                                            if (item.id !== toKeep.id) {
+                                                                next.delete(item.id);
+                                                            }
+                                                        });
+                                                    });
+                                                });
+                                                return next;
+                                            });
+                                        }}
+                                    >
+                                        Unselect lesser stages
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => {
+                                            setSelectedStages(prev => {
+                                                const next = new Set(prev);
+                                                filteredStages.forEach(item => {
+                                                    if (!item.zone.includes('RE-Crisis')) {
+                                                        next.delete(item.id);
+                                                    }
+                                                });
+                                                return next;
+                                            });
+                                        }}
+                                    >
+                                        Unselect non RE-Crisis
+                                    </button>
+                                </div>
+                                {Object.entries(groupedStages).map(([zoneName, categories]) => {
+                                    const allZoneItems = Object.values(categories).flat();
+                                    return (
+                                        <div key={zoneName} className="stage-group-block">
+                                            <button
+                                                type="button"
+                                                className="mini-btn mb-9"
+                                                onClick={() => {
+                                                    setSelectedStages(prev => {
+                                                        const next = new Set(prev);
+                                                        const allSelected = allZoneItems.every(item => next.has(item.id));
+                                                        if (allSelected) {
+                                                            allZoneItems.forEach(item => next.delete(item.id));
+                                                        } else {
+                                                            allZoneItems.forEach(item => next.add(item.id));
+                                                        }
+                                                        return next;
+                                                    });
+                                                }}
+                                            >
+                                                {zoneName}
+                                            </button>
+                                            {Object.entries(categories).map(([categoryName, items]) => (
+                                                <div key={categoryName} className="stage-group-block"
+                                                     style={{marginLeft: '1rem'}}>
+                                                    <button
+                                                        type="button"
+                                                        className="mini-btn mb-9"
+                                                        onClick={() => {
+                                                            setSelectedStages(prev => {
+                                                                const next = new Set(prev);
+                                                                const allSelected = items.every(item => next.has(item.id));
+                                                                if (allSelected) {
+                                                                    items.forEach(item => next.delete(item.id));
+                                                                } else {
+                                                                    items.forEach(item => next.add(item.id));
+                                                                }
+                                                                return next;
+                                                            });
+                                                        }}
+                                                    >
+                                                        {categoryName}
+                                                    </button>
+                                                    <div className="tile-grid" style={{marginLeft: '1rem'}}>
+                                                        {items.map((stage) => (
+                                                            <SquareTile
+                                                                key={stage.id}
+                                                                selected={selectedStages.has(stage.id)}
+                                                                onClick={() => setSelectedStages((prev) => toggleInSet(prev, stage.id))}
+                                                                image={`images/stage_${normalizeName(`${stage.zone}_${stage.category}`)}.png`}
+                                                                placeholderImage="images/placeholder_stage.svg"
+                                                                title={stage.name}
+                                                                tooltip={stage.name}
+                                                                badge={`Lv ${stage.lv}`}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                })}
+                            </AccordionSection>
+                        )}
+
+                        {stageOrCcMode === 'cc' && (
+                            <AccordionSection
+                                title="CC"
+                                titleExtra={<span className="count-text-header">Selected: {selectedCcs.size}</span>}
+                                defaultOpen={true}
+                            >
+                                <div className="filter-row">
+                                    <input
+                                        className="filter-input"
+                                        type="text"
+                                        aria-label="Search cc"
+                                        placeholder="Search CC..."
+                                        value={ccSearch}
+                                        onChange={(e) => setCcSearch(e.target.value)}
+                                    />
+                                </div>
+                                <div className="control-row">
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedCcs((prev) => {
+                                            const next = new Set(prev);
+                                            filteredCcs.forEach((item) => next.add(item.name));
+                                            return next;
+                                        })}
+                                    >
+                                        Select visible
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="mini-btn"
+                                        onClick={() => setSelectedCcs((prev) => {
+                                            const next = new Set(prev);
+                                            filteredCcs.forEach((item) => next.delete(item.name));
+                                            return next;
+                                        })}
+                                    >
+                                        Clear visible
+                                    </button>
+                                </div>
+                                <div className="tile-grid">
+                                    {filteredCcs.map((cc) => (
+                                        <SquareTile
+                                            key={cc.name}
+                                            selected={selectedCcs.has(cc.name)}
+                                            onClick={() => setSelectedCcs((prev) => toggleInSet(prev, cc.name))}
+                                            image="images/placeholder_stage.svg"
+                                            placeholderImage="images/placeholder_stage.svg"
+                                            title={cc.name}
+                                            subtitle="Tags randomization not implemented"
+                                            showText={true}
+                                        />
+                                    ))}
+                                </div>
+                            </AccordionSection>
+                        )}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+</script>
 </body>
 </html>
