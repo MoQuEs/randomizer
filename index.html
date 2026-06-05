@@ -108,12 +108,15 @@
             return next;
         };
 
-        const AccordionSection = ({ title, defaultOpen = true, children }) => {
+        const AccordionSection = ({ title, titleExtra = null, defaultOpen = true, children }) => {
             const [open, setOpen] = useState(defaultOpen);
             return (
                 <div className="panel-card">
                     <button type="button" className="panel-header" onClick={() => setOpen((prev) => !prev)}>
-                        <span>{title}</span>
+                        <div className="panel-header-title-wrap">
+                            <span>{title}</span>
+                            {titleExtra}
+                        </div>
                         <span className="panel-caret">{open ? '-' : '+'}</span>
                     </button>
                     {open && <div className="panel-body">{children}</div>}
@@ -700,7 +703,11 @@
 
                     <div className="row g-4">
                         <div className="col-lg-6">
-                            <AccordionSection title="Characters" defaultOpen={true}>
+                            <AccordionSection
+                                title="Characters"
+                                titleExtra={<span className="count-text-header">Selected: {selectedCharacters.size}</span>}
+                                defaultOpen={true}
+                            >
                                 <div className="filter-row">
                                     <input
                                         className="filter-input"
@@ -779,7 +786,6 @@
                                     >
                                         Clear visible
                                     </button>
-                                    <span className="count-text">Selected: {selectedCharacters.size}</span>
                                 </div>
 
                                 <div className="tile-grid">
@@ -799,7 +805,11 @@
                                 </div>
                             </AccordionSection>
 
-                            <AccordionSection title="Weapons" defaultOpen={true}>
+                            <AccordionSection
+                                title="Weapons"
+                                titleExtra={<span className="count-text-header">Selected: {selectedWeapons.size}</span>}
+                                defaultOpen={true}
+                            >
                                 <div className="filter-row">
                                     <input
                                         className="filter-input"
@@ -854,7 +864,6 @@
                                     >
                                         Clear visible
                                     </button>
-                                    <span className="count-text">Selected: {selectedWeapons.size}</span>
                                 </div>
 
                                 <div className="tile-grid">
@@ -919,7 +928,11 @@
                             </AccordionSection>
 
                             {stageOrCcMode === 'stage' && (
-                                <AccordionSection title="Stages" defaultOpen={true}>
+                                <AccordionSection
+                                    title="Stages"
+                                    titleExtra={<span className="count-text-header">Selected: {selectedStages.size}</span>}
+                                    defaultOpen={true}
+                                >
                                     <div className="filter-row">
                                         <input
                                             className="filter-input"
@@ -992,7 +1005,6 @@
                                         >
                                             Unselect non RE-Crisis
                                         </button>
-                                        <span className="count-text">Selected: {selectedStages.size}</span>
                                     </div>
                                     {Object.entries(groupedStages).map(([zoneName, categories]) => {
                                         const allZoneItems = Object.values(categories).flat();
@@ -1059,7 +1071,11 @@
                             )}
 
                             {stageOrCcMode === 'cc' && (
-                                <AccordionSection title="CC" defaultOpen={true}>
+                                <AccordionSection
+                                    title="CC"
+                                    titleExtra={<span className="count-text-header">Selected: {selectedCcs.size}</span>}
+                                    defaultOpen={true}
+                                >
                                     <div className="filter-row">
                                         <input
                                             className="filter-input"
@@ -1093,7 +1109,6 @@
                                         >
                                             Clear visible
                                         </button>
-                                        <span className="count-text">Selected: {selectedCcs.size}</span>
                                     </div>
                                     <div className="tile-grid">
                                         {filteredCcs.map((cc) => (
