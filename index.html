@@ -188,13 +188,14 @@
             </button>
         );
 
-        function RandomizerOutputModal({ output, onClose, onRandomize }) {
+        function RandomizerOutputModal({ output, onClose, onRandomize, onToggleCharacter, onToggleWeapon, onToggleStage }) {
             if (!output) return null;
 
             return (
                 <div className="custom-modal-overlay" onClick={onClose}>
                     <div className="custom-modal" style={{maxWidth: '900px'}} onClick={e => e.stopPropagation()}>
                         <h4 className="mb-3">Randomizer Output</h4>
+                        <div className="muted-note mb-3">Click on an item to de-select it for the next randomization.</div>
                         <div className="output-grid">
                             {output.error && <div className="error-text">{output.error}</div>}
 
@@ -204,7 +205,8 @@
                                     {output.team.map((character, idx) => (
                                         <SquareTile
                                             key={`out-char-${character.name}-${idx}`}
-                                            selected={true}
+                                            selected={output.selectedCharacters.has(character.name)}
+                                            onClick={() => onToggleCharacter(character.name)}
                                             image={`images/character_${normalizeName(character.name)}.png`}
                                             placeholderImage="images/placeholder_character.svg"
                                             title={character.name}
@@ -222,7 +224,8 @@
                                     {output.weapons.map((entry, idx) => (
                                         <SquareTile
                                             key={`out-weapon-${entry.weapon.name}-${idx}`}
-                                            selected={true}
+                                            selected={output.selectedWeapons.has(entry.weapon.name)}
+                                            onClick={() => onToggleWeapon(entry.weapon.name)}
                                             image={`images/weapon_${normalizeName(entry.weapon.name)}.png`}
                                             placeholderImage={`images/weaponcategory_${normalizeName(entry.weapon.type)}.png`}
                                             title={entry.weapon.name}
@@ -239,7 +242,8 @@
                                 {output.mode === 'stage' && output.stageOrCc && (
                                     <div className="tile-grid output-tile-grid">
                                         <SquareTile
-                                            selected={true}
+                                            selected={output.selectedStages.has(output.stageOrCc.id)}
+                                            onClick={() => onToggleStage(output.stageOrCc.id)}
                                             image={`images/stage_${normalizeName(`${output.stageOrCc.zone}_${output.stageOrCc.category}`)}.png`}
                                             placeholderImage="images/placeholder_stage.svg"
                                             title={output.stageOrCc.name}
@@ -551,7 +555,7 @@
 
                 const availableCharacters = data.characters.filter((character) => selectedCharacters.has(character.name));
                 if (availableCharacters.length < 4) {
-                    setOutput({ error: 'Select at least 4 characters.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode });
+                    setOutput({ error: 'Select at least 4 characters.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode, selectedCharacters, selectedWeapons, selectedStages });
                     setShowOutputModal(true);
                     return;
                 }
@@ -562,7 +566,7 @@
                     (weapon) => selectedWeapons.has(weapon.name) && (weaponCounts[weapon.name] || 0) > 0
                 );
                 if (availableWeapons.length === 0) {
-                    setOutput({ error: 'Select at least one weapon with count > 0.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode });
+                    setOutput({ error: 'Select at least one weapon with count > 0.', team: [], weapons: [], stageOrCc: null, mode: stageOrCcMode, selectedCharacters, selectedWeapons, selectedStages });
                     setShowOutputModal(true);
                     return;
                 }
@@ -574,7 +578,8 @@
                         team,
                         weapons: [],
                         stageOrCc: null,
-                        mode: stageOrCcMode
+                        mode: stageOrCcMode,
+                        selectedCharacters, selectedWeapons, selectedStages
                     });
                     setShowOutputModal(true);
                     return;
@@ -583,7 +588,7 @@
                 if (stageOrCcMode === 'stage') {
                     const availableStageList = data.stagesFlat.filter((stage) => selectedStages.has(stage.id));
                     if (availableStageList.length === 0) {
-                        setOutput({ error: 'Select at least one stage.', team, weapons: [], stageOrCc: null, mode: 'stage' });
+                        setOutput({ error: 'Select at least one stage.', team, weapons: [], stageOrCc: null, mode: 'stage', selectedCharacters, selectedWeapons, selectedStages });
                         setShowOutputModal(true);
                         return;
                     }
@@ -592,7 +597,8 @@
                         team,
                         weapons: team.map((character) => ({ characterName: character.name, weapon: assignment[character.name] })),
                         stageOrCc: getRandomItem(availableStageList),
-                        mode: 'stage'
+                        mode: 'stage',
+                        selectedCharacters, selectedWeapons, selectedStages
                     });
                     setShowOutputModal(true);
                     return;
@@ -600,7 +606,7 @@
 
                 const availableCcList = (data.ccs || []).filter((cc) => selectedCcs.has(cc.name));
                 if (availableCcList.length === 0) {
-                    setOutput({ error: 'Select at least one CC.', team, weapons: [], stageOrCc: null, mode: 'cc' });
+                    setOutput({ error: 'Select at least one CC.', team, weapons: [], stageOrCc: null, mode: 'cc', selectedCharacters, selectedWeapons, selectedStages });
                     setShowOutputModal(true);
                     return;
                 }
@@ -610,7 +616,8 @@
                     team,
                     weapons: team.map((character) => ({ characterName: character.name, weapon: assignment[character.name] })),
                     stageOrCc: getRandomItem(availableCcList),
-                    mode: 'cc'
+                    mode: 'cc',
+                    selectedCharacters, selectedWeapons, selectedStages
                 });
                 setShowOutputModal(true);
             };
@@ -655,7 +662,26 @@
                             </div>
                         </div>
                     )}
-                    {showOutputModal && <RandomizerOutputModal output={output} onClose={closeModals} onRandomize={runRandomizer} />}
+                    {showOutputModal && <RandomizerOutputModal
+                        output={output}
+                        onClose={closeModals}
+                        onRandomize={runRandomizer}
+                        onToggleCharacter={(name) => {
+                            const next = toggleInSet(selectedCharacters, name);
+                            setSelectedCharacters(next);
+                            setOutput(prev => ({ ...prev, selectedCharacters: next }));
+                        }}
+                        onToggleWeapon={(name) => {
+                            const next = toggleInSet(selectedWeapons, name);
+                            setSelectedWeapons(next);
+                            setOutput(prev => ({ ...prev, selectedWeapons: next }));
+                        }}
+                        onToggleStage={(id) => {
+                            const next = toggleInSet(selectedStages, id);
+                            setSelectedStages(next);
+                            setOutput(prev => ({ ...prev, selectedStages: next }));
+                        }}
+                    />}
                     <header className="mb-3">
                         <div className="d-flex justify-content-between align-items-center mb-2">
                             <h3 className="m-0 fw-bold">Randomizer</h3>
