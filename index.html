@@ -68,11 +68,16 @@
         return (category || 'Other').trim();
     };
 
+    const randomIntInclusive = (min, max) => {
+        if (max < min) return min;
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    };
+
     const normalizeCcEntries = (ccData) => {
         if (!ccData || typeof ccData !== 'object') return [];
 
         return Object.entries(ccData).map(([ccName, ccRaw]) => {
-            const rawTags = ccRaw && ccRaw.tags && typeof ccRaw.tags === 'object' ? ccRaw.tags : ccRaw;
+            const rawTags = ccRaw?.tags && typeof ccRaw.tags === 'object' ? ccRaw.tags : {};
             const tags = {};
 
             Object.entries(rawTags || {}).forEach(([tagName, def]) => {
@@ -90,9 +95,26 @@
             return {
                 name: ccName,
                 categories,
-                tags
+                tags,
+                max: Number.isFinite(ccRaw?.max) ? Math.max(0, Math.floor(ccRaw.max)) : null
             };
         });
+    };
+
+    const getCcMaxRisk = (cc) => {
+        if (Number.isFinite(cc?.max)) return Math.max(0, Math.floor(cc.max));
+        return Object.values(cc?.tags || {}).reduce((sum, def) => {
+            const maxCost = Math.max(...(def.cost || [0]));
+            return sum + (Number.isFinite(maxCost) ? maxCost : 0);
+        }, 0);
+    };
+
+    const buildDefaultCcRiskSettings = (ccEntries) => {
+        const result = {};
+        (ccEntries || []).forEach((cc) => {
+            result[cc.name] = {min: 0, max: getCcMaxRisk(cc)};
+        });
+        return result;
     };
 
     const buildDefaultCcTagSelection = (tags) => {
@@ -456,7 +478,16 @@
         );
     };
 
-    function RandomizerOutputModal({output, onClose, onRandomize, onToggleCharacter, onToggleWeapon, onToggleStage}) {
+    function RandomizerOutputModal({
+                                       output,
+                                       onClose,
+                                       onRandomize,
+                                       onToggleCharacter,
+                                       onToggleWeapon,
+                                       onToggleStage,
+                                       onToggleCcRollTag,
+                                       isCcRollTagEnabled
+                                   }) {
         if (!output) return null;
 
         return (
@@ -523,13 +554,13 @@
                             {output.mode === 'cc' && output.stageOrCc && (
                                 <div className="cc-placeholder-wrap">
                                     <span className="chip chip-stage">{output.stageOrCc.name}</span>
+                                    <span className="chip">Risk {output.ccTargetRisk ?? 0}</span>
                                     <div className="tile-grid output-tile-grid">
                                         {(output.ccRoll || []).map((entry, idx) => (
                                             <SquareTile
                                                 key={`cc-roll-${entry.tag}-${entry.cost}-${idx}`}
-                                                selected={true}
-                                                onClick={() => {
-                                                }}
+                                                selected={isCcRollTagEnabled(output.stageOrCc.name, entry.tag, entry.cost)}
+                                                onClick={() => onToggleCcRollTag(output.stageOrCc.name, entry.tag, entry.cost)}
                                                 image={`images/tag_${normalizeName(entry.tag)}.png`}
                                                 placeholderImage="images/placeholder_cc.svg"
                                                 title={entry.tag}
@@ -567,6 +598,7 @@
         const [selectedStages, setSelectedStages] = useState(new Set());
         const [selectedCcName, setSelectedCcName] = useState('');
         const [ccTagSelection, setCcTagSelection] = useState({});
+        const [ccRiskSettings, setCcRiskSettings] = useState({});
 
         const [weaponCounts, setWeaponCounts] = useState({});
 
@@ -607,6 +639,9 @@
                         if (parsed.ccTagSelection && typeof parsed.ccTagSelection === 'object') {
                             setCcTagSelection(parsed.ccTagSelection);
                         }
+                        if (parsed.ccRiskSettings && typeof parsed.ccRiskSettings === 'object') {
+                            setCcRiskSettings(parsed.ccRiskSettings);
+                        }
                     }
                 } catch (e) {
                     console.error("Failed to parse randomizer settings from localStorage", e);
@@ -624,9 +659,10 @@
                 selectedCcName,
                 selectedCcs: selectedCcName ? [selectedCcName] : [],
                 ccTagSelection,
+                ccRiskSettings,
             };
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-        }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcName, ccTagSelection, data]);
+        }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcName, ccTagSelection, ccRiskSettings, data]);
 
         useEffect(() => {
             fetch('data.json')
@@ -659,6 +695,7 @@
                             initialCcTagSelection[cc.name] = buildDefaultCcTagSelection(cc.tags);
                         });
                         setCcTagSelection(initialCcTagSelection);
+                        setCcRiskSettings(buildDefaultCcRiskSettings(ccEntries));
 
                         const initialWeaponCounts = {};
                         json.weapons.forEach((weapon) => {
@@ -730,6 +767,7 @@
                     selectedCcName,
                     selectedCcs: selectedCcName ? [selectedCcName] : [],
                     ccTagSelection,
+                    ccRiskSettings,
                 };
                 setImportExportText(JSON.stringify(settings, null, 2));
             } else {
@@ -749,6 +787,7 @@
                 selectedCcName,
                 selectedCcs: selectedCcName ? [selectedCcName] : [],
                 ccTagSelection,
+                ccRiskSettings,
             };
             setImportExportText(JSON.stringify(settings, null, 2));
         };
@@ -770,7 +809,7 @@
             }
 
             // Basic validation for expected keys
-            const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs', 'selectedCcName', 'ccTagSelection'];
+            const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs', 'selectedCcName', 'ccTagSelection', 'ccRiskSettings'];
             const hasSomeExpectedKey = expectedKeys.some(key => key in parsed);
             if (!hasSomeExpectedKey) {
                 setImportExportError('Imported JSON does not contain any valid settings keys.');
@@ -787,6 +826,9 @@
             }
             if (parsed.ccTagSelection && typeof parsed.ccTagSelection === 'object') {
                 setCcTagSelection(parsed.ccTagSelection);
+            }
+            if (parsed.ccRiskSettings && typeof parsed.ccRiskSettings === 'object') {
+                setCcRiskSettings(parsed.ccRiskSettings);
             }
 
             closeModals();
@@ -843,6 +885,33 @@
                         }
                     });
                     next[cc.name] = ccState;
+                });
+                return changed ? next : prev;
+            });
+        }, [data]);
+
+        useEffect(() => {
+            if (!data) return;
+            setCcRiskSettings((prev) => {
+                const next = {...prev};
+                let changed = false;
+                (data.ccEntries || []).forEach((cc) => {
+                    const ccMax = getCcMaxRisk(cc);
+                    const existing = next[cc.name];
+                    if (!existing) {
+                        next[cc.name] = {min: 0, max: ccMax};
+                        changed = true;
+                        return;
+                    }
+
+                    const min = Number.isFinite(existing.min) ? Math.max(0, Math.floor(existing.min)) : 0;
+                    const max = Number.isFinite(existing.max) ? Math.max(0, Math.floor(existing.max)) : ccMax;
+                    const clampedMin = Math.min(min, ccMax);
+                    const clampedMax = Math.max(clampedMin, Math.min(max, ccMax));
+                    if (clampedMin !== existing.min || clampedMax !== existing.max) {
+                        next[cc.name] = {min: clampedMin, max: clampedMax};
+                        changed = true;
+                    }
                 });
                 return changed ? next : prev;
             });
@@ -928,6 +997,17 @@
                 return byText && byCategory;
             });
         }, [selectedCc, ccTagSearch, ccCategoryFilters]);
+
+        const selectedCcRisk = useMemo(() => {
+            if (!selectedCc) return {min: 0, max: 0, maxRisk: 0};
+            const maxRisk = getCcMaxRisk(selectedCc);
+            const saved = ccRiskSettings[selectedCc.name] || {min: 0, max: maxRisk};
+            const minRaw = Number.isFinite(saved.min) ? Math.max(0, Math.floor(saved.min)) : 0;
+            const maxRaw = Number.isFinite(saved.max) ? Math.max(0, Math.floor(saved.max)) : maxRisk;
+            const min = Math.min(minRaw, maxRisk);
+            const max = Math.max(min, Math.min(maxRaw, maxRisk));
+            return {min, max, maxRisk};
+        }, [selectedCc, ccRiskSettings]);
 
         const runRandomizer = () => {
             if (!data) return;
@@ -1046,13 +1126,20 @@
                 return;
             }
 
-            const ccRoll = findRandomCombination(enabledTags, 18);
+            const ccRisk = ccRiskSettings[cc.name] || {min: 0, max: getCcMaxRisk(cc)};
+            const ccMax = getCcMaxRisk(cc);
+            const minRisk = Math.min(Math.max(0, Math.floor(Number(ccRisk.min) || 0)), ccMax);
+            const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
+            const targetRisk = randomIntInclusive(minRisk, maxRisk);
+
+            const ccRoll = findRandomCombination(enabledTags, targetRisk);
             if (!ccRoll) {
                 setOutput({
-                    error: 'Could not build Risk 18 from currently enabled CC tag levels.',
+                    error: `Could not build Risk ${targetRisk} from currently enabled CC tag levels.`,
                     team,
                     weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
                     stageOrCc: cc,
+                    ccTargetRisk: targetRisk,
                     ccRoll: [],
                     mode: 'cc',
                     selectedCharacters,
@@ -1068,6 +1155,7 @@
                 team,
                 weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
                 stageOrCc: cc,
+                ccTargetRisk: targetRisk,
                 ccRoll,
                 mode: 'cc',
                 selectedCharacters, selectedWeapons, selectedStages
@@ -1139,6 +1227,37 @@
                         const next = toggleInSet(selectedStages, id);
                         setSelectedStages(next);
                         setOutput(prev => ({...prev, selectedStages: next}));
+                    }}
+                    onToggleCcRollTag={(ccName, tagName, cost) => {
+                        setCcTagSelection((prev) => {
+                            const next = {...prev};
+                            const ccState = {...(next[ccName] || {})};
+                            const current = ccState[tagName] || {
+                                enabled: true,
+                                costs: {[cost]: true}
+                            };
+
+                            const nextCostEnabled = current.costs?.[cost] === false;
+                            const nextCosts = {
+                                ...(current.costs || {}),
+                                [cost]: nextCostEnabled
+                            };
+
+                            const hasAnyEnabledCost = Object.values(nextCosts).some((value) => value !== false);
+                            ccState[tagName] = {
+                                ...current,
+                                enabled: hasAnyEnabledCost,
+                                costs: nextCosts
+                            };
+                            next[ccName] = ccState;
+                            return next;
+                        });
+                    }}
+                    isCcRollTagEnabled={(ccName, tagName, cost) => {
+                        const state = ccTagSelection?.[ccName]?.[tagName];
+                        if (!state) return true;
+                        if (state.enabled === false) return false;
+                        return state.costs?.[cost] !== false;
                     }}
                 />}
                 <header className="mb-3">
@@ -1581,6 +1700,51 @@
 
                                 {selectedCc && (
                                     <div className="mt-3">
+                                        <div className="control-row">
+                                            <label className="count-text" htmlFor="cc-risk-min">Min risk</label>
+                                            <input
+                                                id="cc-risk-min"
+                                                className="count-input"
+                                                type="number"
+                                                min="0"
+                                                max={selectedCcRisk.maxRisk}
+                                                value={selectedCcRisk.min}
+                                                onChange={(e) => {
+                                                    const value = Number.parseInt(e.target.value, 10);
+                                                    const parsed = Number.isNaN(value) ? 0 : Math.max(0, value);
+                                                    setCcRiskSettings((prev) => {
+                                                        const next = {...prev};
+                                                        const current = next[selectedCc.name] || {min: 0, max: selectedCcRisk.maxRisk};
+                                                        const nextMin = Math.min(parsed, selectedCcRisk.maxRisk);
+                                                        const nextMax = Math.max(nextMin, Math.min(current.max, selectedCcRisk.maxRisk));
+                                                        next[selectedCc.name] = {min: nextMin, max: nextMax};
+                                                        return next;
+                                                    });
+                                                }}
+                                            />
+                                            <label className="count-text" htmlFor="cc-risk-max">Max risk</label>
+                                            <input
+                                                id="cc-risk-max"
+                                                className="count-input"
+                                                type="number"
+                                                min={selectedCcRisk.min}
+                                                max={selectedCcRisk.maxRisk}
+                                                value={selectedCcRisk.max}
+                                                onChange={(e) => {
+                                                    const value = Number.parseInt(e.target.value, 10);
+                                                    const parsed = Number.isNaN(value) ? selectedCcRisk.maxRisk : Math.max(0, value);
+                                                    setCcRiskSettings((prev) => {
+                                                        const next = {...prev};
+                                                        const current = next[selectedCc.name] || {min: 0, max: selectedCcRisk.maxRisk};
+                                                        const nextMax = Math.min(Math.max(current.min, parsed), selectedCcRisk.maxRisk);
+                                                        next[selectedCc.name] = {min: current.min, max: nextMax};
+                                                        return next;
+                                                    });
+                                                }}
+                                            />
+                                            <span className="muted-note">CC max: {selectedCcRisk.maxRisk}</span>
+                                        </div>
+
                                         <div className="filter-row">
                                             <input
                                                 className="filter-input"
