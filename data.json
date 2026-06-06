@@ -1112,6 +1112,7 @@
         "Ambient",
         "Risk"
       ],
+      "max": 53,
       "tags": {
         "Team: Weaken": {
           "cost": [

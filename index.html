@@ -62,6 +62,71 @@
         return result;
     };
 
+    const getTagCategory = (tagName) => {
+        if (!tagName || typeof tagName !== 'string') return 'Other';
+        const [category] = tagName.split(':');
+        return (category || 'Other').trim();
+    };
+
+    const normalizeCcEntries = (ccData) => {
+        if (!ccData || typeof ccData !== 'object') return [];
+
+        return Object.entries(ccData).map(([ccName, ccRaw]) => {
+            const rawTags = ccRaw && ccRaw.tags && typeof ccRaw.tags === 'object' ? ccRaw.tags : ccRaw;
+            const tags = {};
+
+            Object.entries(rawTags || {}).forEach(([tagName, def]) => {
+                if (!def || typeof def !== 'object' || !Array.isArray(def.cost)) return;
+                tags[tagName] = {
+                    ...def,
+                    cost: [...def.cost]
+                };
+            });
+
+            const categories = Array.isArray(ccRaw?.Categories) && ccRaw.Categories.length > 0
+                ? [...ccRaw.Categories]
+                : [...new Set(Object.keys(tags).map(getTagCategory))];
+
+            return {
+                name: ccName,
+                categories,
+                tags
+            };
+        });
+    };
+
+    const buildDefaultCcTagSelection = (tags) => {
+        const result = {};
+        Object.entries(tags || {}).forEach(([tagName, def]) => {
+            const costs = {};
+            (def.cost || []).forEach((cost) => {
+                costs[cost] = true;
+            });
+            result[tagName] = {enabled: true, costs};
+        });
+        return result;
+    };
+
+    const buildEnabledCcTags = (tags, selection) => {
+        const result = {};
+        Object.entries(tags || {}).forEach(([tagName, def]) => {
+            const tagSelection = selection?.[tagName];
+            if (tagSelection && tagSelection.enabled === false) return;
+
+            const allowedCosts = (def.cost || []).filter((cost) => {
+                if (!tagSelection || !tagSelection.costs) return true;
+                return tagSelection.costs[cost] !== false;
+            });
+
+            if (allowedCosts.length === 0) return;
+            result[tagName] = {
+                ...def,
+                cost: allowedCosts
+            };
+        });
+        return result;
+    };
+
     const assignWeaponsToCharacters = (characters, weapons, weaponCountMap) => {
         const usedCounts = {...weaponCountMap};
         const byType = {};
@@ -354,6 +419,43 @@
         </button>
     );
 
+    const CcTagRow = ({tagName, def, state, onToggleTag, onToggleCost}) => {
+        const enabled = state?.enabled !== false;
+        return (
+            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'}`}>
+                <button type="button" className="cc-tag-main" onClick={onToggleTag}>
+                    <img
+                        src={`images/tag_${normalizeName(tagName)}.png`}
+                        className="cc-tag-image"
+                        alt={tagName}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'images/placeholder_cc.svg';
+                        }}
+                    />
+                    <span className="cc-tag-name">{tagName}</span>
+                </button>
+                <div className="cc-tag-right">
+                    <div className="cc-cost-row">
+                        {(def.cost || []).map((cost) => {
+                            const costEnabled = state?.costs?.[cost] !== false;
+                            return (
+                                <button
+                                    type="button"
+                                    key={`${tagName}-cost-${cost}`}
+                                    className={`cc-cost-btn ${costEnabled ? 'cc-cost-btn-active' : ''}`}
+                                    onClick={() => onToggleCost(cost)}
+                                >
+                                    Lv {cost}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     function RandomizerOutputModal({output, onClose, onRandomize, onToggleCharacter, onToggleWeapon, onToggleStage}) {
         if (!output) return null;
 
@@ -421,7 +523,22 @@
                             {output.mode === 'cc' && output.stageOrCc && (
                                 <div className="cc-placeholder-wrap">
                                     <span className="chip chip-stage">{output.stageOrCc.name}</span>
-                                    <div className="muted-note">CC tags/options randomization not implemented yet.</div>
+                                    <div className="tile-grid output-tile-grid">
+                                        {(output.ccRoll || []).map((entry, idx) => (
+                                            <SquareTile
+                                                key={`cc-roll-${entry.tag}-${entry.cost}-${idx}`}
+                                                selected={true}
+                                                onClick={() => {
+                                                }}
+                                                image={`images/tag_${normalizeName(entry.tag)}.png`}
+                                                placeholderImage="images/placeholder_cc.svg"
+                                                title={entry.tag}
+                                                tooltip={entry.tag}
+                                            >
+                                                <div className="cc-roll-lv">Lv {entry.cost}</div>
+                                            </SquareTile>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -448,7 +565,8 @@
         const [selectedCharacters, setSelectedCharacters] = useState(new Set());
         const [selectedWeapons, setSelectedWeapons] = useState(new Set());
         const [selectedStages, setSelectedStages] = useState(new Set());
-        const [selectedCcs, setSelectedCcs] = useState(new Set());
+        const [selectedCcName, setSelectedCcName] = useState('');
+        const [ccTagSelection, setCcTagSelection] = useState({});
 
         const [weaponCounts, setWeaponCounts] = useState({});
 
@@ -456,6 +574,7 @@
         const [weaponSearch, setWeaponSearch] = useState('');
         const [stageSearch, setStageSearch] = useState('');
         const [ccSearch, setCcSearch] = useState('');
+        const [ccTagSearch, setCcTagSearch] = useState('');
 
         const [characterClassFilters, setCharacterClassFilters] = useState(new Set());
         const [characterElementFilters, setCharacterElementFilters] = useState(new Set());
@@ -464,6 +583,7 @@
         const [characterRarityFilters, setCharacterRarityFilters] = useState(new Set());
         const [weaponCategoryFilters, setWeaponCategoryFilters] = useState(new Set());
         const [weaponRarityFilters, setWeaponRarityFilters] = useState(new Set());
+        const [ccCategoryFilters, setCcCategoryFilters] = useState(new Set());
 
         const [output, setOutput] = useState(null);
         const [showOutputModal, setShowOutputModal] = useState(false);
@@ -480,7 +600,13 @@
                         if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
                         if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
                         if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
-                        if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
+                        if (typeof parsed.selectedCcName === 'string') setSelectedCcName(parsed.selectedCcName);
+                        if (!parsed.selectedCcName && Array.isArray(parsed.selectedCcs) && parsed.selectedCcs.length > 0) {
+                            setSelectedCcName(parsed.selectedCcs[0]);
+                        }
+                        if (parsed.ccTagSelection && typeof parsed.ccTagSelection === 'object') {
+                            setCcTagSelection(parsed.ccTagSelection);
+                        }
                     }
                 } catch (e) {
                     console.error("Failed to parse randomizer settings from localStorage", e);
@@ -495,10 +621,12 @@
                 selectedWeapons: [...selectedWeapons],
                 weaponCounts,
                 selectedStages: [...selectedStages],
-                selectedCcs: [...selectedCcs],
+                selectedCcName,
+                selectedCcs: selectedCcName ? [selectedCcName] : [],
+                ccTagSelection,
             };
             localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-        }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcs, data]);
+        }, [selectedCharacters, selectedWeapons, weaponCounts, selectedStages, selectedCcName, ccTagSelection, data]);
 
         useEffect(() => {
             fetch('data.json')
@@ -508,11 +636,12 @@
                 })
                 .then((json) => {
                     const stagesFlat = flattenStages(json.stages);
+                    const ccEntries = normalizeCcEntries(json.cc);
 
                     const characterRarities = [...new Set(json.characters.map(c => c.rarity))].sort((a, b) => a - b);
                     const weaponRarities = [...new Set(json.weapons.map(w => w.rarity))].sort((a, b) => a - b);
 
-                    const withStageFlat = {...json, stagesFlat, weaponRarities, characterRarities};
+                    const withStageFlat = {...json, stagesFlat, weaponRarities, characterRarities, ccEntries};
                     setData(withStageFlat);
 
                     const savedSettings = localStorage.getItem(SETTINGS_KEY);
@@ -523,7 +652,13 @@
                         setSelectedCharacters(new Set(json.characters.map((c) => c.name)));
                         setSelectedWeapons(new Set(json.weapons.map((w) => w.name)));
                         setSelectedStages(new Set(stagesFlat.map((s) => s.id)));
-                        setSelectedCcs(new Set((json.ccs || []).map((cc) => cc.name)));
+                        setSelectedCcName(ccEntries[0]?.name || '');
+
+                        const initialCcTagSelection = {};
+                        ccEntries.forEach((cc) => {
+                            initialCcTagSelection[cc.name] = buildDefaultCcTagSelection(cc.tags);
+                        });
+                        setCcTagSelection(initialCcTagSelection);
 
                         const initialWeaponCounts = {};
                         json.weapons.forEach((weapon) => {
@@ -539,6 +674,7 @@
                     setCharacterRarityFilters(new Set([]));
                     setWeaponCategoryFilters(new Set([]));
                     setWeaponRarityFilters(new Set([]));
+                    setCcCategoryFilters(new Set([]));
 
                     const initialWeaponCounts = {};
                     json.weapons.forEach((weapon) => {
@@ -591,7 +727,9 @@
                     selectedWeapons: [...selectedWeapons],
                     weaponCounts,
                     selectedStages: [...selectedStages],
-                    selectedCcs: [...selectedCcs],
+                    selectedCcName,
+                    selectedCcs: selectedCcName ? [selectedCcName] : [],
+                    ccTagSelection,
                 };
                 setImportExportText(JSON.stringify(settings, null, 2));
             } else {
@@ -608,7 +746,9 @@
                 selectedWeapons: [...selectedWeapons],
                 weaponCounts,
                 selectedStages: [...selectedStages],
-                selectedCcs: [...selectedCcs],
+                selectedCcName,
+                selectedCcs: selectedCcName ? [selectedCcName] : [],
+                ccTagSelection,
             };
             setImportExportText(JSON.stringify(settings, null, 2));
         };
@@ -630,7 +770,7 @@
             }
 
             // Basic validation for expected keys
-            const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs'];
+            const expectedKeys = ['selectedCharacters', 'selectedWeapons', 'weaponCounts', 'selectedStages', 'selectedCcs', 'selectedCcName', 'ccTagSelection'];
             const hasSomeExpectedKey = expectedKeys.some(key => key in parsed);
             if (!hasSomeExpectedKey) {
                 setImportExportError('Imported JSON does not contain any valid settings keys.');
@@ -641,7 +781,13 @@
             if (parsed.selectedWeapons) setSelectedWeapons(new Set(parsed.selectedWeapons));
             if (parsed.weaponCounts) setWeaponCounts(parsed.weaponCounts);
             if (parsed.selectedStages) setSelectedStages(new Set(parsed.selectedStages));
-            if (parsed.selectedCcs) setSelectedCcs(new Set(parsed.selectedCcs));
+            if (typeof parsed.selectedCcName === 'string') setSelectedCcName(parsed.selectedCcName);
+            if (!parsed.selectedCcName && Array.isArray(parsed.selectedCcs) && parsed.selectedCcs.length > 0) {
+                setSelectedCcName(parsed.selectedCcs[0]);
+            }
+            if (parsed.ccTagSelection && typeof parsed.ccTagSelection === 'object') {
+                setCcTagSelection(parsed.ccTagSelection);
+            }
 
             closeModals();
         };
@@ -651,9 +797,60 @@
             if (stageOrCcMode === 'stage') {
                 setSelectedStages((prev) => (prev.size > 0 ? prev : new Set(data.stagesFlat.map((stage) => stage.id))));
             } else {
-                setSelectedCcs((prev) => (prev.size > 0 ? prev : new Set((data.ccs || []).map((cc) => cc.name))));
+                const availableCcNames = (data.ccEntries || []).map((cc) => cc.name);
+                if (!selectedCcName || !availableCcNames.includes(selectedCcName)) {
+                    setSelectedCcName(availableCcNames[0] || '');
+                }
             }
-        }, [stageOrCcMode, data]);
+        }, [stageOrCcMode, data, selectedCcName]);
+
+        useEffect(() => {
+            if (!data) return;
+            setCcTagSelection((prev) => {
+                const next = {...prev};
+                let changed = false;
+                (data.ccEntries || []).forEach((cc) => {
+                    if (!next[cc.name]) {
+                        next[cc.name] = buildDefaultCcTagSelection(cc.tags);
+                        changed = true;
+                        return;
+                    }
+
+                    const ccState = {...next[cc.name]};
+                    Object.entries(cc.tags || {}).forEach(([tagName, def]) => {
+                        if (!ccState[tagName]) {
+                            const costs = {};
+                            (def.cost || []).forEach((cost) => {
+                                costs[cost] = true;
+                            });
+                            ccState[tagName] = {enabled: true, costs};
+                            changed = true;
+                            return;
+                        }
+
+                        const tagState = ccState[tagName];
+                        const currentCosts = {...(tagState.costs || {})};
+                        let tagChanged = false;
+                        (def.cost || []).forEach((cost) => {
+                            if (!(cost in currentCosts)) {
+                                currentCosts[cost] = true;
+                                tagChanged = true;
+                            }
+                        });
+                        if (tagChanged) {
+                            ccState[tagName] = {...tagState, costs: currentCosts};
+                            changed = true;
+                        }
+                    });
+                    next[cc.name] = ccState;
+                });
+                return changed ? next : prev;
+            });
+        }, [data]);
+
+        useEffect(() => {
+            setCcCategoryFilters(new Set());
+        }, [selectedCcName]);
 
         const filteredCharacters = useMemo(() => {
             if (!data) return [];
@@ -713,8 +910,24 @@
 
         const filteredCcs = useMemo(() => {
             if (!data) return [];
-            return (data.ccs || []).filter((cc) => cc.name.toLowerCase().includes(ccSearch.toLowerCase()));
+            return (data.ccEntries || []).filter((cc) => cc.name.toLowerCase().includes(ccSearch.toLowerCase()));
         }, [data, ccSearch]);
+
+        const selectedCc = useMemo(() => {
+            return filteredCcs.find((cc) => cc.name === selectedCcName)
+                || (data?.ccEntries || []).find((cc) => cc.name === selectedCcName)
+                || null;
+        }, [filteredCcs, data, selectedCcName]);
+
+        const filteredCcTags = useMemo(() => {
+            if (!selectedCc) return [];
+            return Object.entries(selectedCc.tags).filter(([tagName]) => {
+                const byText = tagName.toLowerCase().includes(ccTagSearch.toLowerCase());
+                const category = getTagCategory(tagName);
+                const byCategory = ccCategoryFilters.size === 0 || ccCategoryFilters.has(category);
+                return byText && byCategory;
+            });
+        }, [selectedCc, ccTagSearch, ccCategoryFilters]);
 
         const runRandomizer = () => {
             if (!data) return;
@@ -800,8 +1013,8 @@
                 return;
             }
 
-            const availableCcList = (data.ccs || []).filter((cc) => selectedCcs.has(cc.name));
-            if (availableCcList.length === 0) {
+            const cc = (data.ccEntries || []).find((item) => item.name === selectedCcName);
+            if (!cc) {
                 setOutput({
                     error: 'Select at least one CC.',
                     team,
@@ -816,11 +1029,46 @@
                 return;
             }
 
+            const enabledTags = buildEnabledCcTags(cc.tags, ccTagSelection[cc.name]);
+            if (Object.keys(enabledTags).length === 0) {
+                setOutput({
+                    error: 'Enable at least one CC tag with at least one Lv cost.',
+                    team,
+                    weapons: [],
+                    stageOrCc: cc,
+                    ccRoll: [],
+                    mode: 'cc',
+                    selectedCharacters,
+                    selectedWeapons,
+                    selectedStages
+                });
+                setShowOutputModal(true);
+                return;
+            }
+
+            const ccRoll = findRandomCombination(enabledTags, 18);
+            if (!ccRoll) {
+                setOutput({
+                    error: 'Could not build Risk 18 from currently enabled CC tag levels.',
+                    team,
+                    weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
+                    stageOrCc: cc,
+                    ccRoll: [],
+                    mode: 'cc',
+                    selectedCharacters,
+                    selectedWeapons,
+                    selectedStages
+                });
+                setShowOutputModal(true);
+                return;
+            }
+
             setOutput({
                 error: '',
                 team,
                 weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
-                stageOrCc: getRandomItem(availableCcList),
+                stageOrCc: cc,
+                ccRoll,
                 mode: 'cc',
                 selectedCharacters, selectedWeapons, selectedStages
             });
@@ -1289,7 +1537,7 @@
                         {stageOrCcMode === 'cc' && (
                             <AccordionSection
                                 title="CC"
-                                titleExtra={<span className="count-text-header">Selected: {selectedCcs.size}</span>}
+                                titleExtra={<span className="count-text-header">Selected: {selectedCcName ? 1 : 0}</span>}
                                 defaultOpen={true}
                             >
                                 <div className="filter-row">
@@ -1306,40 +1554,140 @@
                                     <button
                                         type="button"
                                         className="mini-btn"
-                                        onClick={() => setSelectedCcs((prev) => {
-                                            const next = new Set(prev);
-                                            filteredCcs.forEach((item) => next.add(item.name));
-                                            return next;
-                                        })}
+                                        onClick={() => setSelectedCcName(filteredCcs[0]?.name || '')}
                                     >
-                                        Select visible
+                                        Pick first visible
                                     </button>
                                     <button
                                         type="button"
                                         className="mini-btn"
-                                        onClick={() => setSelectedCcs((prev) => {
-                                            const next = new Set(prev);
-                                            filteredCcs.forEach((item) => next.delete(item.name));
-                                            return next;
-                                        })}
+                                        onClick={() => setSelectedCcName('')}
                                     >
-                                        Clear visible
+                                        Clear CC selection
                                     </button>
                                 </div>
                                 <div className="tile-grid">
                                     {filteredCcs.map((cc) => (
                                         <SquareTile
                                             key={cc.name}
-                                            selected={selectedCcs.has(cc.name)}
-                                            onClick={() => setSelectedCcs((prev) => toggleInSet(prev, cc.name))}
-                                            image="images/placeholder_stage.svg"
-                                            placeholderImage="images/placeholder_stage.svg"
+                                            selected={selectedCcName === cc.name}
+                                            onClick={() => setSelectedCcName(cc.name)}
+                                            image={`images/cc_${normalizeName(cc.name)}.png`}
+                                            placeholderImage="images/placeholder_cc.svg"
                                             title={cc.name}
-                                            subtitle="Tags randomization not implemented"
-                                            showText={true}
                                         />
                                     ))}
                                 </div>
+
+                                {selectedCc && (
+                                    <div className="mt-3">
+                                        <div className="filter-row">
+                                            <input
+                                                className="filter-input"
+                                                type="text"
+                                                aria-label="Search cc tags"
+                                                placeholder="Search CC tags..."
+                                                value={ccTagSearch}
+                                                onChange={(e) => setCcTagSearch(e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div className="chips-row">
+                                            {(selectedCc.categories || []).map((category) => (
+                                                <button
+                                                    type="button"
+                                                    key={`cc-cat-${category}`}
+                                                    className={`filter-chip ${ccCategoryFilters.has(category) ? 'filter-chip-active' : ''}`}
+                                                    onClick={() => setCcCategoryFilters((prev) => toggleInSet(prev, category))}
+                                                >
+                                                    {category}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="control-row">
+                                            <button
+                                                type="button"
+                                                className="mini-btn"
+                                                onClick={() => {
+                                                    setCcTagSelection((prev) => {
+                                                        const next = {...prev};
+                                                        const ccState = {...(next[selectedCc.name] || {})};
+                                                        filteredCcTags.forEach(([tagName]) => {
+                                                            const current = ccState[tagName] || {enabled: true, costs: {}};
+                                                            ccState[tagName] = {...current, enabled: true};
+                                                        });
+                                                        next[selectedCc.name] = ccState;
+                                                        return next;
+                                                    });
+                                                }}
+                                            >
+                                                Enable visible tags
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="mini-btn"
+                                                onClick={() => {
+                                                    setCcTagSelection((prev) => {
+                                                        const next = {...prev};
+                                                        const ccState = {...(next[selectedCc.name] || {})};
+                                                        filteredCcTags.forEach(([tagName]) => {
+                                                            const current = ccState[tagName] || {enabled: true, costs: {}};
+                                                            ccState[tagName] = {...current, enabled: false};
+                                                        });
+                                                        next[selectedCc.name] = ccState;
+                                                        return next;
+                                                    });
+                                                }}
+                                            >
+                                                Disable visible tags
+                                            </button>
+                                        </div>
+
+                                        <div className="cc-tag-list">
+                                            {filteredCcTags.map(([tagName, def]) => (
+                                                <CcTagRow
+                                                    key={`${selectedCc.name}-${tagName}`}
+                                                    tagName={tagName}
+                                                    def={def}
+                                                    state={ccTagSelection[selectedCc.name]?.[tagName]}
+                                                    onToggleTag={() => {
+                                                        setCcTagSelection((prev) => {
+                                                            const next = {...prev};
+                                                            const ccState = {...(next[selectedCc.name] || {})};
+                                                            const current = ccState[tagName] || {
+                                                                enabled: true,
+                                                                costs: Object.fromEntries((def.cost || []).map((cost) => [cost, true]))
+                                                            };
+                                                            ccState[tagName] = {...current, enabled: !(current.enabled !== false)};
+                                                            next[selectedCc.name] = ccState;
+                                                            return next;
+                                                        });
+                                                    }}
+                                                    onToggleCost={(cost) => {
+                                                        setCcTagSelection((prev) => {
+                                                            const next = {...prev};
+                                                            const ccState = {...(next[selectedCc.name] || {})};
+                                                            const current = ccState[tagName] || {
+                                                                enabled: true,
+                                                                costs: Object.fromEntries((def.cost || []).map((itemCost) => [itemCost, true]))
+                                                            };
+                                                            ccState[tagName] = {
+                                                                ...current,
+                                                                costs: {
+                                                                    ...current.costs,
+                                                                    [cost]: current.costs?.[cost] === false
+                                                                }
+                                                            };
+                                                            next[selectedCc.name] = ccState;
+                                                            return next;
+                                                        });
+                                                    }}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </AccordionSection>
                         )}
                     </div>
