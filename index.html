@@ -46,13 +46,33 @@
 
     const flattenStages = (stagesObj) => {
         const result = [];
-        Object.entries(stagesObj || {}).forEach(([zoneName, zoneData]) => {
-            Object.entries(zoneData || {}).forEach(([categoryName, categoryData]) => {
-                Object.entries(categoryData || {}).forEach(([stageName, stageData]) => {
+        const stageRoot = stagesObj?.stages && typeof stagesObj.stages === 'object' ? stagesObj.stages : stagesObj;
+        Object.entries(stageRoot || {}).forEach(([zoneName, zoneData]) => {
+            Object.entries(zoneData || {}).forEach(([groupName, groupData]) => {
+                // New format: "Stage Group": [10, 35, 55]
+                if (Array.isArray(groupData)) {
+                    groupData.forEach((lv) => {
+                        if (!Number.isFinite(lv)) return;
+                        result.push({
+                            id: `${zoneName}::${groupName}::${lv}`,
+                            baseId: `${zoneName}::${groupName}`,
+                            zone: zoneName,
+                            category: groupName,
+                            name: groupName,
+                            lv
+                        });
+                    });
+                    return;
+                }
+
+                // Legacy format: "Category": { "Stage Name": { lv: 80 } }
+                Object.entries(groupData || {}).forEach(([stageName, stageData]) => {
+                    if (!Number.isFinite(stageData?.lv)) return;
                     result.push({
-                        id: `${zoneName}::${categoryName}::${stageName}`,
+                        id: `${zoneName}::${groupName}::${stageName}::${stageData.lv}`,
+                        baseId: `${zoneName}::${groupName}::${stageName}`,
                         zone: zoneName,
-                        category: categoryName,
+                        category: groupName,
                         name: stageName,
                         lv: stageData.lv
                     });
@@ -340,6 +360,88 @@
         return solution;
     }
 
+    const getMaxAllowedRisk = (tags) => {
+        const entries = Object.entries(tags);
+
+        let maxRisk = 0;
+
+        function canSelect(tagName, selected) {
+            const def = tags[tagName];
+
+            // tag disables already selected tag
+            if (def.disables) {
+                for (const disabled of def.disables) {
+                    if (selected.has(disabled)) {
+                        return false;
+                    }
+                }
+            }
+
+            // already selected tag disables this one
+            for (const existing of selected) {
+                const existingDef = tags[existing];
+
+                if (
+                    existingDef.disables &&
+                    existingDef.disables.includes(tagName)
+                ) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function requirementsSatisfied(selected) {
+            for (const tagName of selected) {
+                const def = tags[tagName];
+
+                if (!def.require) continue;
+
+                const ok = def.require.some(req =>
+                    selected.has(req)
+                );
+
+                if (!ok) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function dfs(index, selected, risk) {
+            if (index === entries.length) {
+                if (requirementsSatisfied(selected)) {
+                    maxRisk = Math.max(maxRisk, risk);
+                }
+                return;
+            }
+
+            const [tagName, def] = entries[index];
+
+            // skip
+            dfs(index + 1, selected, risk);
+
+            // take with highest cost
+            if (canSelect(tagName, selected)) {
+                selected.add(tagName);
+
+                dfs(
+                    index + 1,
+                    selected,
+                    risk + Math.max(...def.cost)
+                );
+
+                selected.delete(tagName);
+            }
+        }
+
+        dfs(0, new Set(), 0);
+
+        return maxRisk;
+    }
+
     const AccordionSection = ({title, titleExtra = null, defaultOpen = true, children}) => {
         const [open, setOpen] = useState(defaultOpen);
         return (
@@ -478,10 +580,52 @@
         );
     };
 
+    const StageTagRow = ({row, isLevelSelected, onToggleLevel, onToggleRow}) => {
+        const rowEnabled = (row.levels || []).some((level) => isLevelSelected(level.id));
+
+        return (
+        <div className={`cc-tag-row ${rowEnabled ? '' : 'cc-tag-row-disabled'}`}>
+            <button type="button" className="stage-tag-main" onClick={onToggleRow}>
+                <img
+                    src={`images/stage_${normalizeName(`${row.zone}_${row.category}`)}.png`}
+                    className="cc-tag-image"
+                    alt={row.name}
+                    onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = 'images/placeholder_stage.svg';
+                    }}
+                />
+                <div className="stage-tag-text">
+                    <div className="cc-tag-name">{row.name}</div>
+                    <div className="stage-tag-subtitle">
+                        {row.name === row.category ? row.zone : `${row.zone} - ${row.category}`}
+                    </div>
+                </div>
+            </button>
+            <div className="cc-tag-right">
+                <div className="cc-cost-row">
+                    {(row.levels || []).map((level) => (
+                        <button
+                            type="button"
+                            key={`${row.baseId}-lv-${level.lv}`}
+                            className={`cc-cost-btn ${isLevelSelected(level.id) ? 'cc-cost-btn-active' : ''}`}
+                            onClick={() => onToggleLevel(level.id)}
+                        >
+                            Lv {level.lv}
+                        </button>
+                    ))}
+                </div>
+            </div>
+        </div>
+        );
+    };
+
     function RandomizerOutputModal({
                                        output,
                                        onClose,
                                        onRandomize,
+                                       onRandomizeTeamWeapons,
+                                       onRandomizeStage,
                                        onToggleCharacter,
                                        onToggleWeapon,
                                        onToggleStage,
@@ -493,7 +637,15 @@
         return (
             <div className="custom-modal-overlay" onClick={onClose}>
                 <div className="custom-modal" style={{maxWidth: '900px'}} onClick={e => e.stopPropagation()}>
-                    <h4 className="mb-3">Randomizer Output</h4>
+                    <div className="modal-topbar">
+                        <h4 className="m-0">Randomizer Output</h4>
+                        <div className="modal-actions-wrap">
+                            <button className="modal-btn btn-confirm" onClick={onRandomize}>RANDOMIZE</button>
+                            <button className="modal-btn btn-cancel" onClick={onRandomizeTeamWeapons}>RANDOMIZE CHARACTERS & WEAPONS</button>
+                            <button className="modal-btn btn-cancel" onClick={onRandomizeStage}>RANDOMIZE STAGE</button>
+                            <button type="button" className="modal-close-x" aria-label="Close" onClick={onClose}>X</button>
+                        </div>
+                    </div>
                     <div className="muted-note mb-3">Click on an item to de-select it for the next randomization.</div>
                     <div className="output-grid">
                         {output.error && <div className="error-text">{output.error}</div>}
@@ -539,15 +691,18 @@
                         <div className="output-group">
                             <div className="output-label">{output.mode === 'stage' ? 'Stage' : 'CC'}</div>
                             {output.mode === 'stage' && output.stageOrCc && (
-                                <div className="tile-grid output-tile-grid">
-                                    <SquareTile
-                                        selected={output.selectedStages.has(output.stageOrCc.id)}
-                                        onClick={() => onToggleStage(output.stageOrCc.id)}
-                                        image={`images/stage_${normalizeName(`${output.stageOrCc.zone}_${output.stageOrCc.category}`)}.png`}
-                                        placeholderImage="images/placeholder_stage.svg"
-                                        title={output.stageOrCc.name}
-                                        tooltip={output.stageOrCc.name}
-                                        badge={`Lv ${output.stageOrCc.lv}`}
+                                <div className="cc-tag-list">
+                                    <StageTagRow
+                                        row={{
+                                            baseId: output.stageOrCc.baseId || output.stageOrCc.id,
+                                            zone: output.stageOrCc.zone,
+                                            category: output.stageOrCc.category,
+                                            name: output.stageOrCc.name,
+                                            levels: [{id: output.stageOrCc.id, lv: output.stageOrCc.lv}]
+                                        }}
+                                        isLevelSelected={(id) => output.selectedStages.has(id)}
+                                        onToggleLevel={(id) => onToggleStage(id)}
+                                        onToggleRow={() => onToggleStage(output.stageOrCc.id)}
                                     />
                                 </div>
                             )}
@@ -573,10 +728,6 @@
                                 </div>
                             )}
                         </div>
-                    </div>
-                    <div className="modal-buttons">
-                        <button className="modal-btn btn-confirm" onClick={onRandomize}>RANDOMIZE AGAIN</button>
-                        <button className="modal-btn btn-cancel" onClick={onClose}>CLOSE</button>
                     </div>
                 </div>
             </div>
@@ -962,18 +1113,29 @@
             (filteredStages || []).forEach((stage) => {
                 const zoneKey = stage.zone;
                 if (!grouped[zoneKey]) grouped[zoneKey] = {};
-                const catKey = stage.category;
-                if (!grouped[zoneKey][catKey]) grouped[zoneKey][catKey] = [];
-                grouped[zoneKey][catKey].push(stage);
+
+                const rowKey = stage.baseId || `${stage.zone}::${stage.category}::${stage.name}`;
+                if (!grouped[zoneKey][rowKey]) {
+                    grouped[zoneKey][rowKey] = {
+                        baseId: rowKey,
+                        zone: stage.zone,
+                        category: stage.category,
+                        name: stage.name,
+                        levels: []
+                    };
+                }
+
+                grouped[zoneKey][rowKey].levels.push({id: stage.id, lv: stage.lv});
             });
 
-            Object.keys(grouped).forEach((zoneKey) => {
-                Object.keys(grouped[zoneKey]).forEach((catKey) => {
-                    grouped[zoneKey][catKey].sort((a, b) => a.lv - b.lv);
-                });
+            const asArrays = {};
+            Object.entries(grouped).forEach(([zoneKey, rowsById]) => {
+                asArrays[zoneKey] = Object.values(rowsById)
+                    .map((row) => ({...row, levels: [...row.levels].sort((a, b) => a.lv - b.lv)}))
+                    .sort((a, b) => a.name.localeCompare(b.name));
             });
 
-            return grouped;
+            return asArrays;
         }, [filteredStages]);
 
 
@@ -1130,7 +1292,12 @@
             const ccMax = getCcMaxRisk(cc);
             const minRisk = Math.min(Math.max(0, Math.floor(Number(ccRisk.min) || 0)), ccMax);
             const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
-            const targetRisk = randomIntInclusive(minRisk, maxRisk);
+
+            // Cap configured risk range to the real maximum achievable risk for enabled tags.
+            const maxAllowedRisk = getMaxAllowedRisk(enabledTags);
+            const cappedMaxRisk = Math.min(maxRisk, maxAllowedRisk);
+            const cappedMinRisk = Math.min(minRisk, cappedMaxRisk);
+            const targetRisk = randomIntInclusive(cappedMinRisk, cappedMaxRisk);
 
             const ccRoll = findRandomCombination(enabledTags, targetRisk);
             if (!ccRoll) {
@@ -1161,6 +1328,114 @@
                 selectedCharacters, selectedWeapons, selectedStages
             });
             setShowOutputModal(true);
+        };
+
+        const runRandomizerTeamWeapons = () => {
+            if (!data || !output) return;
+
+            const availableCharacters = data.characters.filter((character) => selectedCharacters.has(character.name));
+            if (availableCharacters.length < 4) {
+                setOutput((prev) => ({
+                    ...prev,
+                    error: 'Select at least 4 characters.',
+                    team: [],
+                    weapons: []
+                }));
+                return;
+            }
+
+            const team = pickUnique(availableCharacters, 4);
+            const availableWeapons = data.weapons.filter(
+                (weapon) => selectedWeapons.has(weapon.name) && (weaponCounts[weapon.name] || 0) > 0
+            );
+
+            if (availableWeapons.length === 0) {
+                setOutput((prev) => ({
+                    ...prev,
+                    error: 'Select at least one weapon with count > 0.',
+                    team: [],
+                    weapons: []
+                }));
+                return;
+            }
+
+            const assignment = assignWeaponsToCharacters(team, availableWeapons, weaponCounts);
+            if (!assignment) {
+                setOutput((prev) => ({
+                    ...prev,
+                    error: 'Cannot assign weapons to all 4 characters. Increase counts or select more compatible weapon categories.',
+                    team,
+                    weapons: []
+                }));
+                return;
+            }
+
+            setOutput((prev) => ({
+                ...prev,
+                error: '',
+                team,
+                weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]}))
+            }));
+        };
+
+        const runRandomizerStageOnly = () => {
+            if (!data || !output) return;
+
+            if (output.mode === 'stage') {
+                const availableStageList = data.stagesFlat.filter((stage) => selectedStages.has(stage.id));
+                if (availableStageList.length === 0) {
+                    setOutput((prev) => ({...prev, error: 'Select at least one stage.'}));
+                    return;
+                }
+
+                setOutput((prev) => ({
+                    ...prev,
+                    error: '',
+                    stageOrCc: getRandomItem(availableStageList)
+                }));
+                return;
+            }
+
+            const cc = (data.ccEntries || []).find((item) => item.name === selectedCcName);
+            if (!cc) {
+                setOutput((prev) => ({...prev, error: 'Select at least one CC.'}));
+                return;
+            }
+
+            const enabledTags = buildEnabledCcTags(cc.tags, ccTagSelection[cc.name]);
+            if (Object.keys(enabledTags).length === 0) {
+                setOutput((prev) => ({...prev, error: 'Enable at least one CC tag with at least one Lv cost.', ccRoll: []}));
+                return;
+            }
+
+            const ccRisk = ccRiskSettings[cc.name] || {min: 0, max: getCcMaxRisk(cc)};
+            const ccMax = getCcMaxRisk(cc);
+            const minRisk = Math.min(Math.max(0, Math.floor(Number(ccRisk.min) || 0)), ccMax);
+            const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
+            const maxAllowedRisk = getMaxAllowedRisk(enabledTags);
+            const cappedMaxRisk = Math.min(maxRisk, maxAllowedRisk);
+            const cappedMinRisk = Math.min(minRisk, cappedMaxRisk);
+            const targetRisk = randomIntInclusive(cappedMinRisk, cappedMaxRisk);
+
+            const ccRoll = findRandomCombination(enabledTags, targetRisk);
+            if (!ccRoll) {
+                setOutput((prev) => ({
+                    ...prev,
+                    error: `Could not build Risk ${targetRisk} from currently enabled CC tag levels.`,
+                    stageOrCc: cc,
+                    ccTargetRisk: targetRisk,
+                    ccRoll: []
+                }));
+                return;
+            }
+
+            setOutput((prev) => ({
+                ...prev,
+                error: '',
+                stageOrCc: cc,
+                ccTargetRisk: targetRisk,
+                ccRoll
+            }));
         };
 
         if (error) return <div className="loading-overlay">{error}</div>;
@@ -1213,6 +1488,8 @@
                     output={output}
                     onClose={closeModals}
                     onRandomize={runRandomizer}
+                    onRandomizeTeamWeapons={runRandomizerTeamWeapons}
+                    onRandomizeStage={runRandomizerStageOnly}
                     onToggleCharacter={(name) => {
                         const next = toggleInSet(selectedCharacters, name);
                         setSelectedCharacters(next);
@@ -1554,11 +1831,11 @@
                                         onClick={() => {
                                             setSelectedStages(prev => {
                                                 const next = new Set(prev);
-                                                Object.values(groupedStages).forEach(categories => {
-                                                    Object.values(categories).forEach(items => {
-                                                        const toKeep = items.at(-1);
-                                                        items.forEach(item => {
-                                                            if (item.id !== toKeep.id) {
+                                                Object.values(groupedStages).forEach((rows) => {
+                                                    rows.forEach((row) => {
+                                                        const toKeep = row.levels.at(-1);
+                                                        row.levels.forEach((item) => {
+                                                            if (item.id !== toKeep?.id) {
                                                                 next.delete(item.id);
                                                             }
                                                         });
@@ -1588,65 +1865,55 @@
                                         Unselect non RE-Crisis
                                     </button>
                                 </div>
-                                {Object.entries(groupedStages).map(([zoneName, categories]) => {
-                                    const allZoneItems = Object.values(categories).flat();
+                                {Object.entries(groupedStages).map(([zoneName, rows]) => {
+                                    const allZoneItems = rows.flatMap((row) => row.levels);
                                     return (
-                                        <div key={zoneName} className="stage-group-block">
-                                            <button
-                                                type="button"
-                                                className="mini-btn mb-9"
-                                                onClick={() => {
-                                                    setSelectedStages(prev => {
-                                                        const next = new Set(prev);
-                                                        const allSelected = allZoneItems.every(item => next.has(item.id));
-                                                        if (allSelected) {
-                                                            allZoneItems.forEach(item => next.delete(item.id));
-                                                        } else {
-                                                            allZoneItems.forEach(item => next.add(item.id));
-                                                        }
-                                                        return next;
-                                                    });
-                                                }}
-                                            >
-                                                {zoneName}
-                                            </button>
-                                            {Object.entries(categories).map(([categoryName, items]) => (
-                                                <div key={categoryName} className="stage-group-block"
-                                                     style={{marginLeft: '1rem'}}>
-                                                    <button
-                                                        type="button"
-                                                        className="mini-btn mb-9"
-                                                        onClick={() => {
-                                                            setSelectedStages(prev => {
-                                                                const next = new Set(prev);
-                                                                const allSelected = items.every(item => next.has(item.id));
-                                                                if (allSelected) {
-                                                                    items.forEach(item => next.delete(item.id));
-                                                                } else {
-                                                                    items.forEach(item => next.add(item.id));
-                                                                }
-                                                                return next;
-                                                            });
-                                                        }}
-                                                    >
-                                                        {categoryName}
-                                                    </button>
-                                                    <div className="tile-grid" style={{marginLeft: '1rem'}}>
-                                                        {items.map((stage) => (
-                                                            <SquareTile
-                                                                key={stage.id}
-                                                                selected={selectedStages.has(stage.id)}
-                                                                onClick={() => setSelectedStages((prev) => toggleInSet(prev, stage.id))}
-                                                                image={`images/stage_${normalizeName(`${stage.zone}_${stage.category}`)}.png`}
-                                                                placeholderImage="images/placeholder_stage.svg"
-                                                                title={stage.name}
-                                                                tooltip={stage.name}
-                                                                badge={`Lv ${stage.lv}`}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            ))}
+                                        <div key={zoneName} className="stage-zone-block">
+                                            <div className="stage-zone-header">
+                                                <button
+                                                    type="button"
+                                                    className="mini-btn"
+                                                    onClick={() => {
+                                                        setSelectedStages(prev => {
+                                                            const next = new Set(prev);
+                                                            const allSelected = allZoneItems.every(item => next.has(item.id));
+                                                            if (allSelected) {
+                                                                allZoneItems.forEach(item => next.delete(item.id));
+                                                            } else {
+                                                                allZoneItems.forEach(item => next.add(item.id));
+                                                            }
+                                                            return next;
+                                                        });
+                                                    }}
+                                                >
+                                                    {zoneName}
+                                                </button>
+                                                <span className="muted-note">{rows.length} groups</span>
+                                            </div>
+                                            <div className="cc-tag-list">
+                                                {rows.map((row) => {
+                                                    const allRowSelected = row.levels.every((level) => selectedStages.has(level.id));
+                                                    return (
+                                                        <StageTagRow
+                                                            key={row.baseId}
+                                                            row={row}
+                                                            isLevelSelected={(id) => selectedStages.has(id)}
+                                                            onToggleLevel={(id) => setSelectedStages((prev) => toggleInSet(prev, id))}
+                                                            onToggleRow={() => {
+                                                                setSelectedStages((prev) => {
+                                                                    const next = new Set(prev);
+                                                                    if (allRowSelected) {
+                                                                        row.levels.forEach((level) => next.delete(level.id));
+                                                                    } else {
+                                                                        row.levels.forEach((level) => next.add(level.id));
+                                                                    }
+                                                                    return next;
+                                                                });
+                                                            }}
+                                                        />
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     );
                                 })}
@@ -1779,7 +2046,8 @@
                                                         const ccState = {...(next[selectedCc.name] || {})};
                                                         filteredCcTags.forEach(([tagName]) => {
                                                             const current = ccState[tagName] || {enabled: true, costs: {}};
-                                                            ccState[tagName] = {...current, enabled: true};
+                                                            const costs = Object.fromEntries((selectedCc.tags[tagName]?.cost || []).map((cost) => [cost, true]));
+                                                            ccState[tagName] = {...current, enabled: true, costs};
                                                         });
                                                         next[selectedCc.name] = ccState;
                                                         return next;
@@ -1797,7 +2065,8 @@
                                                         const ccState = {...(next[selectedCc.name] || {})};
                                                         filteredCcTags.forEach(([tagName]) => {
                                                             const current = ccState[tagName] || {enabled: true, costs: {}};
-                                                            ccState[tagName] = {...current, enabled: false};
+                                                            const costs = Object.fromEntries((selectedCc.tags[tagName]?.cost || []).map((cost) => [cost, false]));
+                                                            ccState[tagName] = {...current, enabled: false, costs};
                                                         });
                                                         next[selectedCc.name] = ccState;
                                                         return next;
@@ -1823,7 +2092,13 @@
                                                                 enabled: true,
                                                                 costs: Object.fromEntries((def.cost || []).map((cost) => [cost, true]))
                                                             };
-                                                            ccState[tagName] = {...current, enabled: !(current.enabled !== false)};
+                                                            const nextEnabled = !(current.enabled !== false);
+                                                            const nextCosts = Object.fromEntries((def.cost || []).map((cost) => [cost, nextEnabled]));
+                                                            ccState[tagName] = {
+                                                                ...current,
+                                                                enabled: nextEnabled,
+                                                                costs: nextCosts
+                                                            };
                                                             next[selectedCc.name] = ccState;
                                                             return next;
                                                         });
@@ -1838,6 +2113,10 @@
                                                             };
                                                             ccState[tagName] = {
                                                                 ...current,
+                                                                enabled: Object.values({
+                                                                    ...current.costs,
+                                                                    [cost]: current.costs?.[cost] === false
+                                                                }).some((value) => value !== false),
                                                                 costs: {
                                                                     ...current.costs,
                                                                     [cost]: current.costs?.[cost] === false

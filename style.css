@@ -99,8 +99,8 @@ body {
 }
 
 .cc-tag-image {
-    width: 40px;
-    height: 40px;
+    width: 80px;
+    height: 80px;
     border-radius: 6px;
     border: 1px solid #2e2e2e;
     object-fit: cover;
@@ -145,6 +145,107 @@ body {
     text-align: right;
     font-size: 0.76rem;
     color: rgb(225, 186, 3);
+}
+
+.stage-zone-block {
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    background: #131313;
+    padding: 8px;
+    margin-bottom: 10px;
+}
+
+.stage-tag-main {
+    border: none;
+    background: transparent;
+    color: #ddd;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.stage-tag-text {
+    min-width: 0;
+    text-align: left;
+}
+
+.stage-tag-subtitle {
+    font-size: 0.72rem;
+    color: #8a8a8a;
+}
+
+.stage-zone-header,
+.stage-category-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 7px;
+}
+
+.stage-category-block {
+    border-top: 1px solid #202020;
+    padding-top: 8px;
+    margin-top: 8px;
+}
+
+.stage-row-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.stage-list-row {
+    border: 1px solid #2f2f2f;
+    border-radius: 8px;
+    background: #171717;
+    color: #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px;
+    text-align: left;
+}
+
+.stage-list-row:hover {
+    border-color: #464646;
+}
+
+.stage-list-row-selected {
+    box-shadow: 0 2px 0 1px #eef6ff;
+}
+
+.stage-list-left {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.stage-list-image {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1px solid #2e2e2e;
+    object-fit: cover;
+    background: #111;
+}
+
+.stage-list-text {
+    min-width: 0;
+}
+
+.stage-list-name {
+    font-size: 0.82rem;
+    color: #f2f2f2;
+}
+
+.stage-list-subtitle {
+    font-size: 0.72rem;
+    color: #8a8a8a;
 }
 
 .panel-card {
@@ -576,6 +677,37 @@ body {
     overflow-y: auto;
     color: #fff;
     position: relative;
+}
+
+.modal-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.modal-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.modal-close-x {
+    border: 1px solid #555;
+    background: #1f1f1f;
+    color: #ddd;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+}
+
+.modal-close-x:hover {
+    background: #303030;
+    color: #fff;
 }
 
 .modal-buttons {
