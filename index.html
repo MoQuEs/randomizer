@@ -28,7 +28,8 @@
             .replace(/\s+/g, '_')
             .replace(/:/g, '')
             .replace(/'/g, '')
-            .replace(/,/g, '');
+            .replace(/,/g, '')
+            .replace(/_+/g, '_');
 
     const getRandomItem = (list) => list[Math.floor(Math.random() * list.length)];
 
@@ -107,6 +108,150 @@
         else next.add(key);
         return next;
     };
+
+    const findRandomCombination = (tags, targetRisk) => {
+        const entries = Object.entries(tags);
+
+        // Fisher-Yates shuffle
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        shuffle(entries);
+
+        // Randomize cost order
+        for (const [, def] of entries) {
+            shuffle(def.cost);
+        }
+
+        // Max possible contribution from remaining tags
+        const maxRemaining = new Array(entries.length + 1).fill(0);
+
+        for (let i = entries.length - 1; i >= 0; i--) {
+            const [, def] = entries[i];
+            maxRemaining[i] =
+                maxRemaining[i + 1] +
+                Math.max(...def.cost);
+        }
+
+        const selected = [];
+        const selectedNames = new Set();
+
+        let solution = null;
+
+        function canSelect(tagName, def) {
+            // Direct disable checks
+            if (def.disables) {
+                for (const disabled of def.disables) {
+                    if (selectedNames.has(disabled)) {
+                        return false;
+                    }
+                }
+            }
+
+            // Reverse disable checks
+            for (const name of selectedNames) {
+                const existing = tags[name];
+
+                if (
+                    existing.disables &&
+                    existing.disables.includes(tagName)
+                ) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function requirementsSatisfied() {
+            for (const item of selected) {
+                const def = tags[item.tag];
+
+                if (!def.require) continue;
+
+                let ok = false;
+
+                for (const req of def.require) {
+                    if (selectedNames.has(req)) {
+                        ok = true;
+                        break;
+                    }
+                }
+
+                if (!ok) return false;
+            }
+
+            return true;
+        }
+
+        function dfs(index, risk) {
+            if (solution) return true;
+
+            if (risk === targetRisk) {
+                if (requirementsSatisfied()) {
+                    solution = [...selected];
+                    return true;
+                }
+                return false;
+            }
+
+            if (risk > targetRisk) {
+                return false;
+            }
+
+            if (index >= entries.length) {
+                return false;
+            }
+
+            // Can't possibly reach target anymore
+            if (risk + maxRemaining[index] < targetRisk) {
+                return false;
+            }
+
+            const [tagName, def] = entries[index];
+
+            // Randomize whether we try include or skip first
+            const includeFirst = Math.random() < 0.5;
+
+            const tryInclude = () => {
+                if (!canSelect(tagName, def)) {
+                    return false;
+                }
+
+                selectedNames.add(tagName);
+
+                for (const cost of def.cost) {
+                    selected.push({ tag: tagName, cost });
+
+                    if (dfs(index + 1, risk + cost)) {
+                        return true;
+                    }
+
+                    selected.pop();
+                }
+
+                selectedNames.delete(tagName);
+
+                return false;
+            };
+
+            const trySkip = () => dfs(index + 1, risk);
+
+            if (includeFirst) {
+                return tryInclude() || trySkip();
+            }
+
+            return trySkip() || tryInclude();
+        }
+
+        dfs(0, 0);
+
+        return solution;
+    }
 
     const AccordionSection = ({title, titleExtra = null, defaultOpen = true, children}) => {
         const [open, setOpen] = useState(defaultOpen);
