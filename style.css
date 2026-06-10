@@ -79,6 +79,16 @@ body {
     padding: 6px;
 }
 
+.cc-tag-row-split {
+    border: 1px solid #371c1c;
+    background: #221111;
+}
+
+.cc-tag-row-require {
+    border: 1px solid #37321c;
+    background: #221f11;
+}
+
 .cc-tag-row-disabled {
     opacity: 0.5;
 }

@@ -104,7 +104,7 @@
                 if (!def || typeof def !== 'object' || !Array.isArray(def.cost)) return;
                 tags[tagName] = {
                     ...def,
-                    cost: [...def.cost]
+                    cost: [...def.cost],
                 };
             });
 
@@ -546,7 +546,7 @@
     const CcTagRow = ({tagName, def, state, onToggleTag, onToggleCost}) => {
         const enabled = state?.enabled !== false;
         return (
-            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'}`}>
+            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${(def.require || []).length > 0 ? 'cc-tag-row-require' : ''} ${def.isSplit ?? false ? 'cc-tag-row-split' : ''}`}>
                 <button type="button" className="cc-tag-main" onClick={onToggleTag}>
                     <img
                         src={`images/tag_${normalizeName(tagName)}.png`}
@@ -557,7 +557,12 @@
                             e.target.src = 'images/placeholder_cc.svg';
                         }}
                     />
-                    <span className="cc-tag-name">{tagName}</span>
+                    <div className="stage-tag-text">
+                        <div className="cc-tag-name">{tagName}</div>
+                        <div className="stage-tag-subtitle">
+                            {def.description || ''}
+                        </div>
+                    </div>
                 </button>
                 <div className="cc-tag-right">
                     <div className="cc-cost-row">
@@ -1854,7 +1859,10 @@
                                             setSelectedStages(prev => {
                                                 const next = new Set(prev);
                                                 filteredStages.forEach(item => {
-                                                    if (!item.zone.includes('RE-Crisis')) {
+                                                    if (
+                                                        !item.zone.includes('RE-Crisis')
+	                                                    && !item.zone.includes('Crisis Fragment')
+                                                    ) {
                                                         next.delete(item.id);
                                                     }
                                                 });
@@ -1862,7 +1870,7 @@
                                             });
                                         }}
                                     >
-                                        Unselect non RE-Crisis
+                                        Unselect non RE-Crisis & Crisis Fragment
                                     </button>
                                 </div>
                                 {Object.entries(groupedStages).map(([zoneName, rows]) => {
