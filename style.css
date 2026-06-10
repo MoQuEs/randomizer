@@ -516,6 +516,16 @@ body {
     position: relative;
 }
 
+.square-tile-cc-split {
+    border: 1px solid #371c1c;
+    background: #221111;
+}
+
+.square-tile-cc-require {
+    border: 1px solid #37321c;
+    background: #221f11;
+}
+
 .square-tile:hover {
     border-color: #444;
     transform: translateY(-1px);

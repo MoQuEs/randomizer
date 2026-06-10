@@ -442,6 +442,28 @@
         return maxRisk;
     }
 
+    const sortCcRollByBaseOrder = (cc, ccRoll) => {
+        if (!cc || !Array.isArray(ccRoll)) return [];
+
+        const tagOrder = Object.keys(cc.tags || {});
+        const tagIndexMap = new Map(tagOrder.map((tagName, idx) => [tagName, idx]));
+
+        return [...ccRoll].sort((a, b) => {
+            const aTagIndex = tagIndexMap.has(a.tag) ? tagIndexMap.get(a.tag) : Number.MAX_SAFE_INTEGER;
+            const bTagIndex = tagIndexMap.has(b.tag) ? tagIndexMap.get(b.tag) : Number.MAX_SAFE_INTEGER;
+            if (aTagIndex !== bTagIndex) return aTagIndex - bTagIndex;
+
+            const costs = cc.tags?.[a.tag]?.cost || [];
+            const aCostIndex = costs.indexOf(a.cost);
+            const bCostIndex = costs.indexOf(b.cost);
+            const safeACostIndex = aCostIndex >= 0 ? aCostIndex : Number.MAX_SAFE_INTEGER;
+            const safeBCostIndex = bCostIndex >= 0 ? bCostIndex : Number.MAX_SAFE_INTEGER;
+            if (safeACostIndex !== safeBCostIndex) return safeACostIndex - safeBCostIndex;
+
+            return (a.tag || '').localeCompare(b.tag || '') || (a.cost - b.cost);
+        });
+    };
+
     const AccordionSection = ({title, titleExtra = null, defaultOpen = true, children}) => {
         const [open, setOpen] = useState(defaultOpen);
         return (
@@ -507,6 +529,7 @@
                             onClick,
                             image,
                             placeholderImage,
+                            className = '',
                             title,
                             subtitle,
                             tooltip,
@@ -518,7 +541,7 @@
                         }) => (
         <button
             type="button"
-            className={`square-tile ${selected ? 'square-tile-selected' : ''}`}
+            className={`square-tile ${selected ? 'square-tile-selected' : ''} ${className}`.trim()}
             onClick={onClick}
             title={tooltip || title}
             aria-label={tooltip || title}
@@ -716,19 +739,24 @@
                                     <span className="chip chip-stage">{output.stageOrCc.name}</span>
                                     <span className="chip">Risk {output.ccTargetRisk ?? 0}</span>
                                     <div className="tile-grid output-tile-grid">
-                                        {(output.ccRoll || []).map((entry, idx) => (
-                                            <SquareTile
-                                                key={`cc-roll-${entry.tag}-${entry.cost}-${idx}`}
-                                                selected={isCcRollTagEnabled(output.stageOrCc.name, entry.tag, entry.cost)}
-                                                onClick={() => onToggleCcRollTag(output.stageOrCc.name, entry.tag, entry.cost)}
-                                                image={`images/tag_${normalizeName(entry.tag)}.png`}
-                                                placeholderImage="images/placeholder_cc.svg"
-                                                title={entry.tag}
-                                                tooltip={entry.tag}
-                                            >
-                                                <div className="cc-roll-lv">Lv {entry.cost}</div>
-                                            </SquareTile>
-                                        ))}
+                                        {sortCcRollByBaseOrder(output.stageOrCc, output.ccRoll || []).map((entry, idx) => {
+                                            const tagDef = output.stageOrCc.tags?.[entry.tag];
+                                            const tileClassName = `${(tagDef?.require || []).length > 0 ? 'square-tile-cc-require' : ''} ${tagDef?.isSplit ? 'square-tile-cc-split' : ''}`.trim();
+                                            return (
+                                                <SquareTile
+                                                    key={`cc-roll-${entry.tag}-${entry.cost}-${idx}`}
+                                                    selected={isCcRollTagEnabled(output.stageOrCc.name, entry.tag, entry.cost)}
+                                                    onClick={() => onToggleCcRollTag(output.stageOrCc.name, entry.tag, entry.cost)}
+                                                    image={`images/tag_${normalizeName(entry.tag)}.png`}
+                                                    placeholderImage="images/placeholder_cc.svg"
+                                                    title={entry.tag}
+                                                    tooltip={entry.tag}
+                                                    className={tileClassName}
+                                                >
+                                                    <div className="cc-roll-lv">Lv {entry.cost}</div>
+                                                </SquareTile>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             )}
@@ -1328,7 +1356,7 @@
                 weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
                 stageOrCc: cc,
                 ccTargetRisk: targetRisk,
-                ccRoll,
+                ccRoll: sortCcRollByBaseOrder(cc, ccRoll),
                 mode: 'cc',
                 selectedCharacters, selectedWeapons, selectedStages
             });
@@ -1439,7 +1467,7 @@
                 error: '',
                 stageOrCc: cc,
                 ccTargetRisk: targetRisk,
-                ccRoll
+                ccRoll: sortCcRollByBaseOrder(cc, ccRoll)
             }));
         };
 
