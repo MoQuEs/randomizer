@@ -216,230 +216,247 @@
         return next;
     };
 
-    const findRandomCombination = (tags, targetRisk) => {
-        const entries = Object.entries(tags);
+    function compileTags(tags) {
+        const names = Object.keys(tags);
 
-        // Fisher-Yates shuffle
-        function shuffle(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [arr[i], arr[j]] = [arr[j], arr[i]];
+        const idOf = Object.create(null);
+
+        names.forEach((name, i) => {
+            idOf[name] = i;
+        });
+
+        const compiled = names.map((name, id) => {
+            const def = tags[name];
+
+            let disableMask = 0;
+            let requireMask = 0;
+
+            for (const disabled of def.disables || []) {
+                disableMask |= (1 << idOf[disabled]);
             }
-        }
 
-        shuffle(entries);
+            for (const req of def.require || []) {
+                requireMask |= (1 << idOf[req]);
+            }
 
-        // Randomize cost order
-        for (const [, def] of entries) {
-            shuffle(def.cost);
-        }
+            return {
+                id,
+                name,
+                costs: [...def.cost],
+                disableMask,
+                requireMask,
+                maxCost: Math.max(...def.cost),
+            };
+        });
 
-        // Max possible contribution from remaining tags
-        const maxRemaining = new Array(entries.length + 1).fill(0);
+        compiled.sort((a, b) => b.maxCost - a.maxCost);
 
-        for (let i = entries.length - 1; i >= 0; i--) {
-            const [, def] = entries[i];
+        const maxRemaining = new Array(compiled.length + 1).fill(0);
+
+        for (let i = compiled.length - 1; i >= 0; i--) {
             maxRemaining[i] =
                 maxRemaining[i + 1] +
-                Math.max(...def.cost);
+                compiled[i].maxCost;
         }
 
+        return {
+            tags: compiled,
+            maxRemaining
+        };
+    }
+
+    function findRandomCombination(compiled, targetRisk) {
+        const tags = compiled.tags;
+        const maxRemaining = compiled.maxRemaining;
+
         const selected = [];
-        const selectedNames = new Set();
 
         let solution = null;
 
-        function canSelect(tagName, def) {
-            // Direct disable checks
-            if (def.disables) {
-                for (const disabled of def.disables) {
-                    if (selectedNames.has(disabled)) {
-                        return false;
-                    }
-                }
+        const memo = new Set();
+
+        function shuffle(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = (Math.random() * (i + 1)) | 0;
+                [arr[i], arr[j]] =
+                    [arr[j], arr[i]];
+            }
+        }
+
+        const tagOrder = [...tags];
+        shuffle(tagOrder);
+
+        for (const tag of tagOrder) {
+            shuffle(tag.costs);
+        }
+
+        function dfs(
+            index,
+            risk,
+            selectedMask,
+            invalidRequirements
+        ) {
+            if (solution) {
+                return true;
             }
 
-            // Reverse disable checks
-            for (const name of selectedNames) {
-                const existing = tags[name];
+            if (
+                risk > targetRisk ||
+                index >= tagOrder.length
+            ) {
+                return false;
+            }
 
+            if (
+                risk + maxRemaining[index] <
+                targetRisk
+            ) {
+                return false;
+            }
+
+            const memoKey =
+                index +
+                "|" +
+                risk +
+                "|" +
+                selectedMask +
+                "|" +
+                invalidRequirements;
+
+            if (memo.has(memoKey)) {
+                return false;
+            }
+
+            if (
+                risk === targetRisk &&
+                invalidRequirements === 0
+            ) {
+                solution = [...selected];
+                return true;
+            }
+
+            const tag = tagOrder[index];
+
+            const include = () => {
                 if (
-                    existing.disables &&
-                    existing.disables.includes(tagName)
+                    selectedMask &
+                    tag.disableMask
                 ) {
                     return false;
                 }
-            }
 
-            return true;
-        }
+                const newMask =
+                    selectedMask |
+                    (1 << tag.id);
 
-        function requirementsSatisfied() {
-            for (const item of selected) {
-                const def = tags[item.tag];
+                let invalidDelta = 0;
 
-                if (!def.require) continue;
+                // requirement of this tag
+                if (
+                    tag.requireMask &&
+                    !(newMask & tag.requireMask)
+                ) {
+                    invalidDelta++;
+                }
 
-                let ok = false;
-
-                for (const req of def.require) {
-                    if (selectedNames.has(req)) {
-                        ok = true;
-                        break;
+                // previously invalid selected tags
+                // that become valid because of this addition
+                for (const item of selected) {
+                    if (
+                        item.requireMask &&
+                        !(selectedMask & item.requireMask) &&
+                        (newMask & item.requireMask)
+                    ) {
+                        invalidDelta--;
                     }
                 }
 
-                if (!ok) return false;
-            }
+                for (const cost of tag.costs) {
+                    selected.push({
+                        tag: tag.name,
+                        cost,
+                        requireMask: tag.requireMask
+                    });
 
-            return true;
-        }
-
-        function dfs(index, risk) {
-            if (solution) return true;
-
-            if (risk === targetRisk) {
-                if (requirementsSatisfied()) {
-                    solution = [...selected];
-                    return true;
-                }
-                return false;
-            }
-
-            if (risk > targetRisk) {
-                return false;
-            }
-
-            if (index >= entries.length) {
-                return false;
-            }
-
-            // Can't possibly reach target anymore
-            if (risk + maxRemaining[index] < targetRisk) {
-                return false;
-            }
-
-            const [tagName, def] = entries[index];
-
-            // Randomize whether we try include or skip first
-            const includeFirst = Math.random() < 0.5;
-
-            const tryInclude = () => {
-                if (!canSelect(tagName, def)) {
-                    return false;
-                }
-
-                selectedNames.add(tagName);
-
-                for (const cost of def.cost) {
-                    selected.push({ tag: tagName, cost });
-
-                    if (dfs(index + 1, risk + cost)) {
+                    if (
+                        dfs(
+                            index + 1,
+                            risk + cost,
+                            newMask,
+                            invalidRequirements + invalidDelta
+                        )
+                    ) {
                         return true;
                     }
 
                     selected.pop();
                 }
 
-                selectedNames.delete(tagName);
-
                 return false;
             };
 
-            const trySkip = () => dfs(index + 1, risk);
+            const skip = () =>
+                dfs(
+                    index + 1,
+                    risk,
+                    selectedMask,
+                    invalidRequirements
+                );
 
-            if (includeFirst) {
-                return tryInclude() || trySkip();
+            const found =
+                Math.random() < 0.5
+                    ? include() || skip()
+                    : skip() || include();
+
+            if (!found) {
+                memo.add(memoKey);
             }
 
-            return trySkip() || tryInclude();
+            return found;
         }
 
-        dfs(0, 0);
+        dfs(0, 0, 0, 0);
 
         return solution;
     }
 
-    const getMaxAllowedRisk = (tags) => {
-        const entries = Object.entries(tags);
+    function getMaxAllowedRisk(compiled) {
+        const tags = compiled.tags;
 
-        let maxRisk = 0;
+        let best = 0;
 
-        function canSelect(tagName, selected) {
-            const def = tags[tagName];
-
-            // tag disables already selected tag
-            if (def.disables) {
-                for (const disabled of def.disables) {
-                    if (selected.has(disabled)) {
-                        return false;
-                    }
-                }
-            }
-
-            // already selected tag disables this one
-            for (const existing of selected) {
-                const existingDef = tags[existing];
-
-                if (
-                    existingDef.disables &&
-                    existingDef.disables.includes(tagName)
-                ) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        function requirementsSatisfied(selected) {
-            for (const tagName of selected) {
-                const def = tags[tagName];
-
-                if (!def.require) continue;
-
-                const ok = def.require.some(req =>
-                    selected.has(req)
-                );
-
-                if (!ok) {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        function dfs(index, selected, risk) {
-            if (index === entries.length) {
-                if (requirementsSatisfied(selected)) {
-                    maxRisk = Math.max(maxRisk, risk);
+        function dfs(index, risk, selectedMask) {
+            if (index === tags.length) {
+                if (risk > best) {
+                    best = risk;
                 }
                 return;
             }
 
-            const [tagName, def] = entries[index];
+            const tag = tags[index];
 
-            // skip
-            dfs(index + 1, selected, risk);
+            // Skip
+            dfs(index + 1, risk, selectedMask);
 
-            // take with highest cost
-            if (canSelect(tagName, selected)) {
-                selected.add(tagName);
+            // Include
+            if (!(selectedMask & tag.disableMask)) {
+                const newMask =
+                    selectedMask |
+                    (1 << tag.id);
 
-                dfs(
-                    index + 1,
-                    selected,
-                    risk + Math.max(...def.cost)
-                );
-
-                selected.delete(tagName);
+                for (const cost of tag.costs) {
+                    dfs(
+                        index + 1,
+                        risk + cost,
+                        newMask
+                    );
+                }
             }
         }
 
-        dfs(0, new Set(), 0);
+        dfs(0, 0, 0);
 
-        return maxRisk;
+        return best;
     }
 
     const sortCcRollByBaseOrder = (cc, ccRoll) => {
@@ -569,7 +586,7 @@
     const CcTagRow = ({tagName, def, state, onToggleTag, onToggleCost}) => {
         const enabled = state?.enabled !== false;
         return (
-            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${(def.require || []).length > 0 ? 'cc-tag-row-require' : ''} ${def.isSplit ?? false ? 'cc-tag-row-split' : ''}`}>
+            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${def.isLocked ?? false ? 'cc-tag-row-require' : ''} ${def.isKey ?? false ? 'cc-tag-row-split' : ''}`}>
                 <button type="button" className="cc-tag-main" onClick={onToggleTag}>
                     <img
                         src={`images/tag_${normalizeName(tagName)}.png`}
