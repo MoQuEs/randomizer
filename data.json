@@ -1114,20 +1114,20 @@
           "cost": [
             3
           ],
+          "isKey": true,
           "disables": [
             "Ambient: Tremor"
           ],
-          "isSplit": true,
           "description": "Length of Operator Combo Skill Cooldown -60%; Battle Skill DMG Dealt -60%"
         },
         "Ambient: Tremor": {
           "cost": [
             3
           ],
+          "isKey": true,
           "disables": [
             "Ambient: Overclock"
           ],
-          "isSplit": true,
           "description": "Operators' DMG Dealt +100% for any DMG not dealt by Basic Attack, Battle Skill, Combo Skill, or Ultimate. Battle Skill DMG Dealt -60%."
         },
         "Edit: Encasement": {
@@ -1135,6 +1135,7 @@
             1,
             2
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1145,6 +1146,7 @@
           "cost": [
             2
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1156,6 +1158,7 @@
             1,
             2
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1167,6 +1170,7 @@
             1,
             2
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1178,6 +1182,7 @@
             1,
             2
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1188,6 +1193,7 @@
           "cost": [
             1
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1203,6 +1209,7 @@
           "cost": [
             1
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1218,6 +1225,7 @@
           "cost": [
             1
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1233,6 +1241,7 @@
           "cost": [
             1
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"
@@ -1249,6 +1258,7 @@
             1,
             2
           ],
+          "isLocked": true,
           "require": [
             "Ambient: Overclock",
             "Ambient: Tremor"

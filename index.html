@@ -422,6 +422,7 @@
 
     function getMaxAllowedRisk(compiled) {
         const tags = compiled.tags;
+        const maxRemaining = compiled.maxRemaining;
 
         let best = 0;
 
@@ -433,25 +434,24 @@
                 return;
             }
 
+            // Even if we took maximum possible
+            // remaining costs we can't beat current best.
+            if (risk + maxRemaining[index] <= best) {
+                return;
+            }
+
             const tag = tags[index];
 
-            // Skip
-            dfs(index + 1, risk, selectedMask);
-
-            // Include
+            // Include first (helps best grow faster)
             if (!(selectedMask & tag.disableMask)) {
-                const newMask =
-                    selectedMask |
-                    (1 << tag.id);
+                const newMask = selectedMask | (1 << tag.id);
 
                 for (const cost of tag.costs) {
-                    dfs(
-                        index + 1,
-                        risk + cost,
-                        newMask
-                    );
+                    dfs(index + 1, risk + cost, newMask);
                 }
             }
+
+            dfs(index + 1, risk, mask);
         }
 
         dfs(0, 0, 0);
@@ -586,7 +586,7 @@
     const CcTagRow = ({tagName, def, state, onToggleTag, onToggleCost}) => {
         const enabled = state?.enabled !== false;
         return (
-            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${def.isLocked ?? false ? 'cc-tag-row-require' : ''} ${def.isKey ?? false ? 'cc-tag-row-split' : ''}`}>
+            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${def.isLocked ?? false ? 'cc-tag-row-locked' : ''} ${def.isKey ?? false ? 'cc-tag-row-key' : ''}`}>
                 <button type="button" className="cc-tag-main" onClick={onToggleTag}>
                     <img
                         src={`images/tag_${normalizeName(tagName)}.png`}
@@ -758,7 +758,7 @@
                                     <div className="tile-grid output-tile-grid">
                                         {sortCcRollByBaseOrder(output.stageOrCc, output.ccRoll || []).map((entry, idx) => {
                                             const tagDef = output.stageOrCc.tags?.[entry.tag];
-                                            const tileClassName = `${(tagDef?.require || []).length > 0 ? 'square-tile-cc-require' : ''} ${tagDef?.isSplit ? 'square-tile-cc-split' : ''}`.trim();
+                                            const tileClassName = `${tagDef?.isLocked ?? false ? 'square-tile-cc-locked' : ''} ${tagDef?.isKey ?? false ? 'square-tile-cc-key' : ''}`.trim();
                                             return (
                                                 <SquareTile
                                                     key={`cc-roll-${entry.tag}-${entry.cost}-${idx}`}
@@ -1344,12 +1344,12 @@
             const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
 
             // Cap configured risk range to the real maximum achievable risk for enabled tags.
-            const maxAllowedRisk = getMaxAllowedRisk(enabledTags);
+            const maxAllowedRisk = getMaxAllowedRisk(compileTags(enabledTags));
             const cappedMaxRisk = Math.min(maxRisk, maxAllowedRisk);
             const cappedMinRisk = Math.min(minRisk, cappedMaxRisk);
             const targetRisk = randomIntInclusive(cappedMinRisk, cappedMaxRisk);
 
-            const ccRoll = findRandomCombination(enabledTags, targetRisk);
+            const ccRoll = findRandomCombination(compileTags(enabledTags), targetRisk);
             if (!ccRoll) {
                 setOutput({
                     error: `Could not build Risk ${targetRisk} from currently enabled CC tag levels.`,
@@ -1462,12 +1462,12 @@
             const ccMax = getCcMaxRisk(cc);
             const minRisk = Math.min(Math.max(0, Math.floor(Number(ccRisk.min) || 0)), ccMax);
             const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
-            const maxAllowedRisk = getMaxAllowedRisk(enabledTags);
+            const maxAllowedRisk = getMaxAllowedRisk(compileTags(enabledTags));
             const cappedMaxRisk = Math.min(maxRisk, maxAllowedRisk);
             const cappedMinRisk = Math.min(minRisk, cappedMaxRisk);
             const targetRisk = randomIntInclusive(cappedMinRisk, cappedMaxRisk);
 
-            const ccRoll = findRandomCombination(enabledTags, targetRisk);
+            const ccRoll = findRandomCombination(compileTags(enabledTags), targetRisk);
             if (!ccRoll) {
                 setOutput((prev) => ({
                     ...prev,

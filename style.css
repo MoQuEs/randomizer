@@ -79,14 +79,14 @@ body {
     padding: 6px;
 }
 
-.cc-tag-row-split {
-    border: 1px solid #371c1c;
-    background: #221111;
+.cc-tag-row-key {
+    border: 1px solid #353020;
+    background: #1b1910;
 }
 
-.cc-tag-row-require {
-    border: 1px solid #37321c;
-    background: #221f11;
+.cc-tag-row-locked {
+    border: 1px solid #331f1f;
+    background: #1e1313;
 }
 
 .cc-tag-row-disabled {
@@ -516,14 +516,14 @@ body {
     position: relative;
 }
 
-.square-tile-cc-split {
-    border: 1px solid #371c1c;
-    background: #221111;
+.square-tile-cc-key {
+    border: 1px solid #353020;
+    background: #1b1910;
 }
 
-.square-tile-cc-require {
-    border: 1px solid #37321c;
-    background: #221f11;
+.square-tile-cc-locked {
+    border: 1px solid #331f1f;
+    background: #1e1313;
 }
 
 .square-tile:hover {
