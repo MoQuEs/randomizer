@@ -219,244 +219,158 @@
     function compileTags(tags) {
         const names = Object.keys(tags);
 
-        const idOf = Object.create(null);
+        const id = {};
+        names.forEach((n, i) => id[n] = i);
 
-        names.forEach((name, i) => {
-            idOf[name] = i;
-        });
-
-        const compiled = names.map((name, id) => {
+        const compiled = names.map((name, i) => {
             const def = tags[name];
+            let disableMask = 0, requireMask = 0;
 
-            let disableMask = 0;
-            let requireMask = 0;
+            for (const x of def.disables || [])
+                disableMask |= 1 << id[x];
 
-            for (const disabled of def.disables || []) {
-                disableMask |= (1 << idOf[disabled]);
-            }
-
-            for (const req of def.require || []) {
-                requireMask |= (1 << idOf[req]);
-            }
+            for (const x of def.require || [])
+                requireMask |= 1 << id[x];
 
             return {
-                id,
+                id: i,
                 name,
                 costs: [...def.cost],
                 disableMask,
                 requireMask,
-                maxCost: Math.max(...def.cost),
+                maxCost: Math.max(...def.cost)
             };
         });
 
-        compiled.sort((a, b) => b.maxCost - a.maxCost);
-
-        const maxRemaining = new Array(compiled.length + 1).fill(0);
-
-        for (let i = compiled.length - 1; i >= 0; i--) {
-            maxRemaining[i] =
-                maxRemaining[i + 1] +
-                compiled[i].maxCost;
-        }
-
         return {
-            tags: compiled,
-            maxRemaining
+            tags: compiled
         };
     }
 
     function findRandomCombination(compiled, targetRisk) {
-        const tags = compiled.tags;
-        const maxRemaining = compiled.maxRemaining;
+        const shuffle = a => {
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.random() * (i + 1) | 0;
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+        };
+
+        // random search order only, IDs stay unchanged
+        const tags = [...compiled.tags];
+
+        tags.sort((a, b) => {
+            return (b.maxCost + Math.random() * 3) -
+                (a.maxCost + Math.random() * 3);
+        });
+
+        for (const t of tags)
+            shuffle(t.costs);
+
+        const maxRemaining = new Array(tags.length + 1).fill(0);
+
+        for (let i = tags.length - 1; i >= 0; i--)
+            maxRemaining[i] = maxRemaining[i + 1] + tags[i].maxCost;
 
         const selected = [];
+        const failed = new Set();
+        let result = null;
 
-        let solution = null;
-
-        const memo = new Set();
-
-        function shuffle(arr) {
-            for (let i = arr.length - 1; i > 0; i--) {
-                const j = (Math.random() * (i + 1)) | 0;
-                [arr[i], arr[j]] =
-                    [arr[j], arr[i]];
-            }
-        }
-
-        const tagOrder = [...tags];
-        shuffle(tagOrder);
-
-        for (const tag of tagOrder) {
-            shuffle(tag.costs);
-        }
-
-        function dfs(
-            index,
-            risk,
-            selectedMask,
-            invalidRequirements
-        ) {
-            if (solution) {
-                return true;
-            }
-
-            if (
-                risk > targetRisk ||
-                index >= tagOrder.length
-            ) {
-                return false;
-            }
-
-            if (
-                risk + maxRemaining[index] <
-                targetRisk
-            ) {
-                return false;
-            }
-
-            const memoKey =
-                index +
-                "|" +
-                risk +
-                "|" +
-                selectedMask +
-                "|" +
-                invalidRequirements;
-
-            if (memo.has(memoKey)) {
-                return false;
-            }
-
-            if (
-                risk === targetRisk &&
-                invalidRequirements === 0
-            ) {
-                solution = [...selected];
-                return true;
-            }
-
-            const tag = tagOrder[index];
-
-            const include = () => {
-                if (
-                    selectedMask &
-                    tag.disableMask
-                ) {
+        function validRequirements(mask) {
+            for (const t of selected) {
+                if (t.requireMask && !(mask & t.requireMask))
                     return false;
+            }
+
+            return true;
+        }
+
+        function dfs(index, risk, mask) {
+            if (result) return true;
+
+            if (risk === targetRisk) {
+                if (validRequirements(mask)) {
+                    result = selected.map(x => ({
+                        tag: x.name,
+                        cost: x.selectedCost
+                    }));
+
+                    return true;
+                }
+
+                return false;
+            }
+
+
+            if (index >= tags.length || risk > targetRisk)
+                return false;
+
+            if (risk + maxRemaining[index] < targetRisk)
+                return false;
+
+            const key = index + "|" + risk + "|" + mask;
+
+            if (failed.has(key))
+                return false;
+
+            const tag = tags[index];
+
+            function include() {
+                // existing tag disables new tag
+                if (mask & tag.disableMask)
+                    return false;
+
+                // new tag disables existing tags
+                for (const old of selected) {
+                    if (old.disableMask & (1 << tag.id))
+                        return false;
                 }
 
                 const newMask =
-                    selectedMask |
-                    (1 << tag.id);
+                    mask | (1 << tag.id);
 
-                let invalidDelta = 0;
+                const costs = [...tag.costs];
+                shuffle(costs);
 
-                // requirement of this tag
-                if (
-                    tag.requireMask &&
-                    !(newMask & tag.requireMask)
-                ) {
-                    invalidDelta++;
-                }
+                for (const cost of costs) {
+                    if (risk + cost > targetRisk)
+                        continue;
 
-                // previously invalid selected tags
-                // that become valid because of this addition
-                for (const item of selected) {
-                    if (
-                        item.requireMask &&
-                        !(selectedMask & item.requireMask) &&
-                        (newMask & item.requireMask)
-                    ) {
-                        invalidDelta--;
-                    }
-                }
-
-                for (const cost of tag.costs) {
                     selected.push({
-                        tag: tag.name,
-                        cost,
-                        requireMask: tag.requireMask
+                        ...tag,
+                        selectedCost: cost
                     });
 
-                    if (
-                        dfs(
-                            index + 1,
-                            risk + cost,
-                            newMask,
-                            invalidRequirements + invalidDelta
-                        )
-                    ) {
+                    if (dfs(index + 1, risk + cost, newMask))
                         return true;
-                    }
 
                     selected.pop();
                 }
 
                 return false;
-            };
+            }
 
-            const skip = () =>
-                dfs(
+
+            function skip() {
+                return dfs(
                     index + 1,
                     risk,
-                    selectedMask,
-                    invalidRequirements
+                    mask
                 );
-
-            const found =
-                Math.random() < 0.5
-                    ? include() || skip()
-                    : skip() || include();
-
-            if (!found) {
-                memo.add(memoKey);
             }
 
-            return found;
-        }
+            const ok = Math.random() < 0.5
+                ? include() || skip()
+                : skip() || include();
 
-        dfs(0, 0, 0, 0);
+            if (!ok)
+                failed.add(key);
 
-        return solution;
-    }
-
-    function getMaxAllowedRisk(compiled) {
-        const tags = compiled.tags;
-        const maxRemaining = compiled.maxRemaining;
-
-        let best = 0;
-
-        function dfs(index, risk, selectedMask) {
-            if (index === tags.length) {
-                if (risk > best) {
-                    best = risk;
-                }
-                return;
-            }
-
-            // Even if we took maximum possible
-            // remaining costs we can't beat current best.
-            if (risk + maxRemaining[index] <= best) {
-                return;
-            }
-
-            const tag = tags[index];
-
-            // Include first (helps best grow faster)
-            if (!(selectedMask & tag.disableMask)) {
-                const newMask = selectedMask | (1 << tag.id);
-
-                for (const cost of tag.costs) {
-                    dfs(index + 1, risk + cost, newMask);
-                }
-            }
-
-            dfs(index + 1, risk, mask);
+            return ok;
         }
 
         dfs(0, 0, 0);
 
-        return best;
+        return result;
     }
 
     const sortCcRollByBaseOrder = (cc, ccRoll) => {
@@ -586,7 +500,8 @@
     const CcTagRow = ({tagName, def, state, onToggleTag, onToggleCost}) => {
         const enabled = state?.enabled !== false;
         return (
-            <div className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${def.isLocked ?? false ? 'cc-tag-row-locked' : ''} ${def.isKey ?? false ? 'cc-tag-row-key' : ''}`}>
+            <div
+                className={`cc-tag-row ${enabled ? '' : 'cc-tag-row-disabled'} ${def.isLocked ?? false ? 'cc-tag-row-locked' : ''} ${def.isKey ?? false ? 'cc-tag-row-key' : ''}`}>
                 <button type="button" className="cc-tag-main" onClick={onToggleTag}>
                     <img
                         src={`images/tag_${normalizeName(tagName)}.png`}
@@ -629,39 +544,39 @@
         const rowEnabled = (row.levels || []).some((level) => isLevelSelected(level.id));
 
         return (
-        <div className={`cc-tag-row ${rowEnabled ? '' : 'cc-tag-row-disabled'}`}>
-            <button type="button" className="stage-tag-main" onClick={onToggleRow}>
-                <img
-                    src={`images/stage_${normalizeName(`${row.zone}_${row.category}`)}.png`}
-                    className="cc-tag-image"
-                    alt={row.name}
-                    onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = 'images/placeholder_stage.svg';
-                    }}
-                />
-                <div className="stage-tag-text">
-                    <div className="cc-tag-name">{row.name}</div>
-                    <div className="stage-tag-subtitle">
-                        {row.name === row.category ? row.zone : `${row.zone} - ${row.category}`}
+            <div className={`cc-tag-row ${rowEnabled ? '' : 'cc-tag-row-disabled'}`}>
+                <button type="button" className="stage-tag-main" onClick={onToggleRow}>
+                    <img
+                        src={`images/stage_${normalizeName(`${row.zone}_${row.category}`)}.png`}
+                        className="cc-tag-image"
+                        alt={row.name}
+                        onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'images/placeholder_stage.svg';
+                        }}
+                    />
+                    <div className="stage-tag-text">
+                        <div className="cc-tag-name">{row.name}</div>
+                        <div className="stage-tag-subtitle">
+                            {row.name === row.category ? row.zone : `${row.zone} - ${row.category}`}
+                        </div>
+                    </div>
+                </button>
+                <div className="cc-tag-right">
+                    <div className="cc-cost-row">
+                        {(row.levels || []).map((level) => (
+                            <button
+                                type="button"
+                                key={`${row.baseId}-lv-${level.lv}`}
+                                className={`cc-cost-btn ${isLevelSelected(level.id) ? 'cc-cost-btn-active' : ''}`}
+                                onClick={() => onToggleLevel(level.id)}
+                            >
+                                Lv {level.lv}
+                            </button>
+                        ))}
                     </div>
                 </div>
-            </button>
-            <div className="cc-tag-right">
-                <div className="cc-cost-row">
-                    {(row.levels || []).map((level) => (
-                        <button
-                            type="button"
-                            key={`${row.baseId}-lv-${level.lv}`}
-                            className={`cc-cost-btn ${isLevelSelected(level.id) ? 'cc-cost-btn-active' : ''}`}
-                            onClick={() => onToggleLevel(level.id)}
-                        >
-                            Lv {level.lv}
-                        </button>
-                    ))}
-                </div>
             </div>
-        </div>
         );
     };
 
@@ -686,9 +601,13 @@
                         <h4 className="m-0">Randomizer Output</h4>
                         <div className="modal-actions-wrap">
                             <button className="modal-btn btn-confirm" onClick={onRandomize}>RANDOMIZE</button>
-                            <button className="modal-btn btn-cancel" onClick={onRandomizeTeamWeapons}>RANDOMIZE CHARACTERS & WEAPONS</button>
+                            <button className="modal-btn btn-cancel" onClick={onRandomizeTeamWeapons}>RANDOMIZE
+                                                                                                      CHARACTERS &
+                                                                                                      WEAPONS
+                            </button>
                             <button className="modal-btn btn-cancel" onClick={onRandomizeStage}>RANDOMIZE STAGE</button>
-                            <button type="button" className="modal-close-x" aria-label="Close" onClick={onClose}>X</button>
+                            <button type="button" className="modal-close-x" aria-label="Close" onClick={onClose}>X
+                            </button>
                         </div>
                     </div>
                     <div className="muted-note mb-3">Click on an item to de-select it for the next randomization.</div>
@@ -1344,17 +1263,18 @@
             const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
 
             // Cap configured risk range to the real maximum achievable risk for enabled tags.
-            const maxAllowedRisk = getMaxAllowedRisk(compileTags(enabledTags));
-            const cappedMaxRisk = Math.min(maxRisk, maxAllowedRisk);
-            const cappedMinRisk = Math.min(minRisk, cappedMaxRisk);
-            const targetRisk = randomIntInclusive(cappedMinRisk, cappedMaxRisk);
+            const cappedMinRisk = Math.min(minRisk, maxRisk);
+            const targetRisk = randomIntInclusive(cappedMinRisk, maxRisk);
 
             const ccRoll = findRandomCombination(compileTags(enabledTags), targetRisk);
             if (!ccRoll) {
                 setOutput({
                     error: `Could not build Risk ${targetRisk} from currently enabled CC tag levels.`,
                     team,
-                    weapons: team.map((character) => ({characterName: character.name, weapon: assignment[character.name]})),
+                    weapons: team.map((character) => ({
+                        characterName: character.name,
+                        weapon: assignment[character.name]
+                    })),
                     stageOrCc: cc,
                     ccTargetRisk: targetRisk,
                     ccRoll: [],
@@ -1454,7 +1374,11 @@
 
             const enabledTags = buildEnabledCcTags(cc.tags, ccTagSelection[cc.name]);
             if (Object.keys(enabledTags).length === 0) {
-                setOutput((prev) => ({...prev, error: 'Enable at least one CC tag with at least one Lv cost.', ccRoll: []}));
+                setOutput((prev) => ({
+                    ...prev,
+                    error: 'Enable at least one CC tag with at least one Lv cost.',
+                    ccRoll: []
+                }));
                 return;
             }
 
@@ -1462,10 +1386,8 @@
             const ccMax = getCcMaxRisk(cc);
             const minRisk = Math.min(Math.max(0, Math.floor(Number(ccRisk.min) || 0)), ccMax);
             const maxRisk = Math.max(minRisk, Math.min(Math.max(0, Math.floor(Number(ccRisk.max) || ccMax)), ccMax));
-            const maxAllowedRisk = getMaxAllowedRisk(compileTags(enabledTags));
-            const cappedMaxRisk = Math.min(maxRisk, maxAllowedRisk);
-            const cappedMinRisk = Math.min(minRisk, cappedMaxRisk);
-            const targetRisk = randomIntInclusive(cappedMinRisk, cappedMaxRisk);
+            const cappedMinRisk = Math.min(minRisk, maxRisk);
+            const targetRisk = randomIntInclusive(cappedMinRisk, maxRisk);
 
             const ccRoll = findRandomCombination(compileTags(enabledTags), targetRisk);
             if (!ccRoll) {
@@ -1906,7 +1828,7 @@
                                                 filteredStages.forEach(item => {
                                                     if (
                                                         !item.zone.includes('RE-Crisis')
-	                                                    && !item.zone.includes('Crisis Fragment')
+                                                        && !item.zone.includes('Crisis Fragment')
                                                     ) {
                                                         next.delete(item.id);
                                                     }
@@ -1976,7 +1898,8 @@
                         {stageOrCcMode === 'cc' && (
                             <AccordionSection
                                 title="CC"
-                                titleExtra={<span className="count-text-header">Selected: {selectedCcName ? 1 : 0}</span>}
+                                titleExtra={<span
+                                    className="count-text-header">Selected: {selectedCcName ? 1 : 0}</span>}
                                 defaultOpen={true}
                             >
                                 <div className="filter-row">
@@ -2034,7 +1957,10 @@
                                                     const parsed = Number.isNaN(value) ? 0 : Math.max(0, value);
                                                     setCcRiskSettings((prev) => {
                                                         const next = {...prev};
-                                                        const current = next[selectedCc.name] || {min: 0, max: selectedCcRisk.maxRisk};
+                                                        const current = next[selectedCc.name] || {
+                                                            min: 0,
+                                                            max: selectedCcRisk.maxRisk
+                                                        };
                                                         const nextMin = Math.min(parsed, selectedCcRisk.maxRisk);
                                                         const nextMax = Math.max(nextMin, Math.min(current.max, selectedCcRisk.maxRisk));
                                                         next[selectedCc.name] = {min: nextMin, max: nextMax};
@@ -2055,7 +1981,10 @@
                                                     const parsed = Number.isNaN(value) ? selectedCcRisk.maxRisk : Math.max(0, value);
                                                     setCcRiskSettings((prev) => {
                                                         const next = {...prev};
-                                                        const current = next[selectedCc.name] || {min: 0, max: selectedCcRisk.maxRisk};
+                                                        const current = next[selectedCc.name] || {
+                                                            min: 0,
+                                                            max: selectedCcRisk.maxRisk
+                                                        };
                                                         const nextMax = Math.min(Math.max(current.min, parsed), selectedCcRisk.maxRisk);
                                                         next[selectedCc.name] = {min: current.min, max: nextMax};
                                                         return next;
@@ -2098,7 +2027,10 @@
                                                         const next = {...prev};
                                                         const ccState = {...(next[selectedCc.name] || {})};
                                                         filteredCcTags.forEach(([tagName]) => {
-                                                            const current = ccState[tagName] || {enabled: true, costs: {}};
+                                                            const current = ccState[tagName] || {
+                                                                enabled: true,
+                                                                costs: {}
+                                                            };
                                                             const costs = Object.fromEntries((selectedCc.tags[tagName]?.cost || []).map((cost) => [cost, true]));
                                                             ccState[tagName] = {...current, enabled: true, costs};
                                                         });
@@ -2117,7 +2049,10 @@
                                                         const next = {...prev};
                                                         const ccState = {...(next[selectedCc.name] || {})};
                                                         filteredCcTags.forEach(([tagName]) => {
-                                                            const current = ccState[tagName] || {enabled: true, costs: {}};
+                                                            const current = ccState[tagName] || {
+                                                                enabled: true,
+                                                                costs: {}
+                                                            };
                                                             const costs = Object.fromEntries((selectedCc.tags[tagName]?.cost || []).map((cost) => [cost, false]));
                                                             ccState[tagName] = {...current, enabled: false, costs};
                                                         });

@@ -1132,8 +1132,7 @@
         },
         "Edit: Encasement": {
           "cost": [
-            1,
-            2
+            1
           ],
           "isLocked": true,
           "require": [
