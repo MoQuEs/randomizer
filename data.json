@@ -277,6 +277,26 @@
       "rarity": 6,
       "element": "Heat",
       "faction": "Seš'qa",
+      "main": "Agility",
+      "sub": "Intellect"
+    },
+    {
+      "name": "Arcane",
+      "class": "Caster",
+      "type": "Arts Unit",
+      "rarity": 6,
+      "element": "Nature",
+      "faction": "HAS",
+      "main": "Intellect",
+      "sub": "Will"
+    },
+    {
+      "name": "Liino",
+      "class": "Supporter",
+      "type": "Polearm",
+      "rarity": 6,
+      "element": "Electric",
+      "faction": "Seš'qa",
       "main": "None",
       "sub": "None"
     }
@@ -883,7 +903,7 @@
       "skill_stat": "Pursuit"
     },
     {
-      "name": "Type 42: Solema Phalanx",
+      "name": "Type 42: Solemn Phalanx",
       "type": "Arts Unit",
       "rarity": 6,
       "attr_stat": "Intellect",
@@ -970,10 +990,20 @@
         60,
         80,
         90
+      ],
+      "Alleikhreos": [
+        40,
+        60,
+        80,
+        90
       ]
     },
     "Crisis Fragment": {
       "Craghowler": [
+        75,
+        90
+      ],
+      "Blitzcrash Blightshade": [
         75,
         90
       ]
@@ -1042,7 +1072,7 @@
   },
   "cc": {
     "Re-Ignition Experimental Operation": {
-      "max": 51,
+      "max": 53,
       "tags": {
         "Team: Weaken": {
           "cost": [
@@ -1138,6 +1168,12 @@
             3
           ],
           "description": "Operator's Basic Attack DMG Dealt -70%."
+        },
+        "Team: Encumbered": {
+          "cost": [
+            1
+          ],
+          "description": "Natural SP Recovery is temporarily paused when the controlled Operator has not dealt a Final Strike to the enemy for 12 seconds."
         },
         "Ambient: Synced Growth": {
           "cost": [
