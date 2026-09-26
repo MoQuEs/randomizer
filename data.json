@@ -309,6 +309,16 @@
       "faction": "Rhodes Island",
       "main": "Agility",
       "sub": "Will"
+    },
+    {
+      "name": "Purrchena",
+      "class": "Defender",
+      "type": "Sword",
+      "rarity": 5,
+      "element": "Physical",
+      "faction": "TGCC",
+      "main": "Strength",
+      "sub": "Will"
     }
   ],
   "weapons": [
@@ -947,7 +957,7 @@
     {
       "name": "Dessert Moment",
       "type": "Sword",
-      "rarity": 6,
+      "rarity": 5,
       "attr_stat": "Strength",
       "sec_stat": "Treatment Efficiency Boost",
       "skill_stat": "Medicant"
