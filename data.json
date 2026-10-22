@@ -319,6 +319,26 @@
       "faction": "TGCC",
       "main": "Strength",
       "sub": "Will"
+    },
+    {
+      "name": "Si",
+      "class": "Supporter",
+      "type": "Greatsword",
+      "rarity": 6,
+      "element": "Cryo",
+      "faction": "HAS",
+      "main": "Intellect",
+      "sub": "Strength"
+    },
+    {
+      "name": "Argent Flow",
+      "class": "Guard",
+      "type": "Sword",
+      "rarity": 6,
+      "element": "Electric",
+      "faction": "HAS",
+      "main": "",
+      "sub": ""
     }
   ],
   "weapons": [
@@ -961,6 +981,38 @@
       "attr_stat": "Strength",
       "sec_stat": "Treatment Efficiency Boost",
       "skill_stat": "Medicant"
+    },
+    {
+      "name": "Lunar Calling",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Attack Boost",
+      "skill_stat": "Infliction"
+    },
+    {
+      "name": "Complexed Industry",
+      "type": "Sword",
+      "rarity": 6,
+      "attr_stat": "Will",
+      "sec_stat": "Electric DMG Boost",
+      "skill_stat": "Detonate"
+    },
+    {
+      "name": "Jade Vessel",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Cryo DMG Boost",
+      "skill_stat": "Efficacy"
+    },
+    {
+      "name": "Long Heritage",
+      "type": "Greatsword",
+      "rarity": 6,
+      "attr_stat": "Intellect",
+      "sec_stat": "Nature DMG Boost",
+      "skill_stat": "Efficacy"
     }
   ],
   "attribute": [
@@ -1040,6 +1092,12 @@
         60,
         80,
         90
+      ],
+      "Si": [
+        40,
+        60,
+        80,
+        90
       ]
     },
     "Crisis Fragment": {
@@ -1102,19 +1160,22 @@
     },
     "Crisis Drills": {
       "Hazardous Material Collection Site": [
-        70
+        80
       ],
       "Hazardous Material Landfill": [
-        70
+        80
       ],
       "Hazardous Material Management Room": [
-        70
+        80
       ],
       "Hazardous Material Institute": [
-        70
+        80
       ],
       "Hazardous Material Containment Vault": [
-        70
+        80
+      ],
+      "Hazardous Material Dissolving Pool": [
+        80
       ]
     }
   },
